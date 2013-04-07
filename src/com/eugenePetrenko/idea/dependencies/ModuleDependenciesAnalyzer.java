@@ -1,6 +1,7 @@
 package com.eugenePetrenko.idea.dependencies;
 
 import com.intellij.codeInsight.daemon.ProblemHighlightFilter;
+import com.intellij.concurrency.JobLauncher;
 import com.intellij.lang.injection.InjectedLanguageManager;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.components.ApplicationComponent;
@@ -15,11 +16,11 @@ import com.intellij.openapi.roots.*;
 import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
+import com.intellij.util.Processor;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by Eugene Petrenko (eugene.petrenko@gmail.com)
@@ -41,15 +42,16 @@ public class ModuleDependenciesAnalyzer implements ApplicationComponent {
 
   /**
    * Performs references analysis for all modules
+   *
    * @param indicator progress
-   * @param app application
-   * @param project project
+   * @param app       application
+   * @param project   project
    * @return set of module dependencies that could be removed
    */
   @NotNull
   public Map<Module, LibOrModuleSet> processAllDependencies(@NotNull final ProgressIndicator indicator,
-                                                  @NotNull final Application app,
-                                                  @NotNull final Project project) {
+                                                            @NotNull final Application app,
+                                                            @NotNull final Project project) {
     final Module[] modules = app.runReadAction(new Computable<Module[]>() {
       public Module[] compute() {
         return ModuleManager.getInstance(project).getSortedModules();
@@ -72,15 +74,15 @@ public class ModuleDependenciesAnalyzer implements ApplicationComponent {
   }
 
 
-
-    /**
-     * Performs references analysis for given module
-     * @param indicator progress
-     * @param app application
-     * @param project project
-     * @param module module
-     * @return set of module dependencies that could be removed
-     */
+  /**
+   * Performs references analysis for given module
+   *
+   * @param indicator progress
+   * @param app       application
+   * @param project   project
+   * @param module    module
+   * @return set of module dependencies that could be removed
+   */
   @NotNull
   public LibOrModuleSet processModuleDependencies(@NotNull final ProgressIndicator indicator,
                                                   @NotNull final Application app,
@@ -90,61 +92,84 @@ public class ModuleDependenciesAnalyzer implements ApplicationComponent {
 
     final PsiManager psiManager = PsiManager.getInstance(project);
     final ModuleRootManager roots = ModuleRootManager.getInstance(module);
-    final ModuleFileIndex index = roots.getFileIndex();
-    index.iterateContent(new ContentIterator() {
+    final ModuleFileIndex moduleIndex = roots.getFileIndex();
+    final ProjectFileIndex projectIndex = ProjectRootManager.getInstance(project).getFileIndex();
+
+    final List<VirtualFile> allFiles = new ArrayList<VirtualFile>(1000);
+    moduleIndex.iterateContent(new ContentIterator() {
       public boolean processFile(@NotNull final VirtualFile fileOrDir) {
         indicator.checkCanceled();
 
         if (fileOrDir.isDirectory()) return true;
         if (ProjectCoreUtil.isProjectOrWorkspaceFile(fileOrDir)) return true;
-        if (!index.isInContent(fileOrDir)) return true;
+        if (!moduleIndex.isInContent(fileOrDir)) return true;
 
-        app.runReadAction(new Runnable() {
-          public void run() {
-            final PsiFile psiFile = psiManager.findFile(fileOrDir);
-
-            if (psiFile == null) return;
-            if (!psiFile.isValid()) return;
-            if (!ProblemHighlightFilter.shouldProcessFileInBatch(psiFile)) return;
-
-            indicator.checkCanceled();
-            indicator.setText2("" + ProjectUtil.calcRelativeToProjectPath(fileOrDir, project));
-
-            psiFile.accept(new PsiRecursiveElementVisitor() {
-              @Override
-              public void visitElement(final PsiElement element) {
-                super.visitElement(element);
-
-                for (final PsiReference ref : element.getReferences()) {
-                  final PsiElement resolved = ref.resolve();
-                  if (resolved == null) continue;
-                  if (resolved.getProject().isDefault()) continue;
-                  if (!resolved.isValid()) continue;
-
-                  final PsiFile file = resolved.getContainingFile();
-                  if (file == null) continue;
-                  if (!file.isValid()) continue;
-
-                  final VirtualFile virtual = file.getVirtualFile();
-                  if (virtual == null) continue;
-                  if (!virtual.isValid()) continue;
-
-                  final List<OrderEntry> refs = ProjectRootManager.getInstance(project).getFileIndex().getOrderEntriesForFile(virtual);
-                  for (OrderEntry e : refs) {
-                    dependencies.addDependency(e);
-                  }
-                }
-              }
-            });
-
-            psiManager.dropResolveCaches();
-            InjectedLanguageManager.getInstance(psiFile.getProject()).dropFileCaches(psiFile);
-          }
-        });
-
+        allFiles.add(fileOrDir);
         return true;
       }
     });
+
+    final double total = allFiles.size();
+    final AtomicInteger current = new AtomicInteger();
+
+    JobLauncher.getInstance().invokeConcurrentlyUnderProgress(
+            allFiles,
+            indicator,
+            true,
+            new Processor<VirtualFile>() {
+              public boolean process(@NotNull final VirtualFile file) {
+                indicator.checkCanceled();
+                indicator.setFraction(current.incrementAndGet() / total);
+
+                final Set<OrderEntry> oes = new HashSet<OrderEntry>(10);
+                app.runReadAction(new Runnable() {
+                  public void run() {
+                    final PsiFile psiFile = psiManager.findFile(file);
+
+                    if (psiFile == null) return;
+                    if (!psiFile.isValid()) return;
+                    if (!ProblemHighlightFilter.shouldProcessFileInBatch(psiFile)) return;
+
+                    indicator.checkCanceled();
+                    indicator.setText2("" + ProjectUtil.calcRelativeToProjectPath(file, project));
+
+                    psiFile.accept(new PsiRecursiveElementVisitor() {
+                      @Override
+                      public void visitElement(final PsiElement element) {
+                        super.visitElement(element);
+
+                        for (final PsiReference ref : element.getReferences()) {
+                          final PsiElement resolved = ref.resolve();
+                          if (resolved == null) continue;
+                          if (resolved.getProject().isDefault()) continue;
+                          if (!resolved.isValid()) continue;
+
+                          final PsiFile file = resolved.getContainingFile();
+                          if (file == null) continue;
+                          if (!file.isValid()) continue;
+
+                          final VirtualFile virtual = file.getVirtualFile();
+                          if (virtual == null) continue;
+                          if (!virtual.isValid()) continue;
+
+
+                          oes.addAll(projectIndex.getOrderEntriesForFile(virtual));
+                        }
+                      }
+                    });
+
+                    psiManager.dropResolveCaches();
+                    InjectedLanguageManager.getInstance(psiFile.getProject()).dropFileCaches(psiFile);
+                  }
+                });
+
+                synchronized (dependencies) {
+                  dependencies.addDependencies(oes);
+                }
+                return true;
+              }
+            }
+    );
 
     final LibOrModuleSet toRemove = new LibOrModuleSet();
     app.runReadAction(new Runnable() {

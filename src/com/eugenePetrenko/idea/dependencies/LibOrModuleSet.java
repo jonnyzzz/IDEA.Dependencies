@@ -4,11 +4,13 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.roots.LibraryOrderEntry;
 import com.intellij.openapi.roots.ModuleOrderEntry;
 import com.intellij.openapi.roots.OrderEntry;
+import com.intellij.openapi.roots.RootPolicy;
 import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.util.text.StringUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collection;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -21,62 +23,19 @@ public class LibOrModuleSet {
   private final Set<String> myModules = new TreeSet<String>();
   private final Set<String> myLibs = new TreeSet<String>();
 
-  public void addDependency(@Nullable Module module) {
-    if (module == null) return;
-    String name = module.getName();
-    myModules.add(name);
-  }
-
-  public void addDependency(@NotNull ModuleOrderEntry module) {
-    addDependency(module.getModule());
-  }
-
-  public void addDependency(@NotNull LibraryOrderEntry lib) {
-    addDependency(lib.getLibrary());
-  }
-
-  public void addDependency(@Nullable Library lib) {
-    if (lib == null) return;
-    String name = lib.getName();
-    if (name == null) return;
-    myLibs.add(name);
-  }
-
-  public boolean contains(@Nullable Module m) {
-    return m != null && myModules.contains(m.getName());
-  }
-
-  public boolean contains(@Nullable ModuleOrderEntry m) {
-    return m != null && contains(m.getModule());
-  }
-
-  public boolean contains(@Nullable Library l) {
-    return l != null && myLibs.contains(l.getName());
-  }
-
-  public boolean contains(@Nullable LibraryOrderEntry l) {
-    return l != null && contains(l.getLibrary());
-  }
-
   public boolean contains(@Nullable OrderEntry e) {
-    if (e instanceof ModuleOrderEntry) {
-      return contains((ModuleOrderEntry)e);
-    }
+    if (e == null) return false;
+    return e.accept(CONTAINS, false);
+  }
 
-    if (e instanceof LibraryOrderEntry) {
-      return contains((LibraryOrderEntry)e);
+  public void addDependencies(@NotNull Collection<? extends OrderEntry> es) {
+    for (OrderEntry e : es) {
+      addDependency(e);
     }
-    return false;
   }
 
   public void addDependency(@NotNull OrderEntry e) {
-    if (e instanceof ModuleOrderEntry) {
-      addDependency((ModuleOrderEntry)e);
-    }
-
-    if (e instanceof LibraryOrderEntry) {
-      addDependency((LibraryOrderEntry)e);
-    }
+    e.accept(ADD, null);
   }
 
   @Override
@@ -86,4 +45,40 @@ public class LibOrModuleSet {
             ", Libs=" + StringUtil.join(myLibs, "\n") +
             '}';
   }
+
+  private final RootPolicy<Void> ADD = new RootPolicy<Void>(){
+    @Override
+    public Void visitLibraryOrderEntry(LibraryOrderEntry libraryOrderEntry, Void value) {
+      Library lib1 = libraryOrderEntry.getLibrary();
+      if (lib1 == null) return null;
+      String name = lib1.getName();
+      if (name == null) return null;
+      myLibs.add(name);
+
+      return null;
+    }
+
+    @Override
+    public Void visitModuleOrderEntry(ModuleOrderEntry moduleOrderEntry, Void value) {
+      final Module module = moduleOrderEntry.getModule();
+      if (module == null) return null;
+      final String name = module.getName();
+      myModules.add(name);
+      return null;
+    }
+  };
+
+  private final RootPolicy<Boolean> CONTAINS = new RootPolicy<Boolean>(){
+    @Override
+    public Boolean visitLibraryOrderEntry(LibraryOrderEntry libraryOrderEntry, Boolean value) {
+      final Library lib = libraryOrderEntry.getLibrary();
+      return lib != null && myLibs.contains(lib.getName());
+    }
+
+    @Override
+    public Boolean visitModuleOrderEntry(ModuleOrderEntry moduleOrderEntry, Boolean value) {
+      final Module mod = moduleOrderEntry.getModule();
+      return mod != null && myModules.contains(mod.getName());
+    }
+  };
 }
