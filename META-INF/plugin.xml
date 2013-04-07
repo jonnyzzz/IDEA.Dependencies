@@ -42,6 +42,8 @@
 
       <action class="com.eugenePetrenko.idea.dependencies.OnProjectAction" text="Check global dependencies" id="jproject"/>
       <action class="com.eugenePetrenko.idea.dependencies.OnModuleAction" text="Check module dependencies" id="jmodule"/>
+      <separator />
+      <action class="com.eugenePetrenko.idea.dependencies.ui.TestAction" text="Test UI" id="jmock"/>
     </group>
 
     <group>
