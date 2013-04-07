@@ -154,7 +154,7 @@ public class LibrariesSelectionDialog extends DialogWrapper {
       myModel = model;
       children = new Vector();
       Module[] modules = ModuleManager.getInstance(project).getSortedModules();
-      Arrays.sort(modules, MODULE_COMPARATOR);
+      Arrays.sort(modules, Comparators.MODULE_COMPARATOR);
       for (Module module : modules) {
         final LibOrModuleSet filter = myModel.forModule(module);
         if (filter == null || filter.isEmpty()) continue;
@@ -327,10 +327,4 @@ public class LibrariesSelectionDialog extends DialogWrapper {
       }
     }
   }
-
-  private final Comparator<Module> MODULE_COMPARATOR = new Comparator<Module>() {
-    public int compare(Module o1, Module o2) {
-      return o1.getName().compareTo(o2.getName());
-    }
-  };
 }

@@ -47,8 +47,24 @@ public class ModuleDependenciesAnalyzer {
       }
     });
 
-    final RemoveModulesModel result = new RemoveModulesModel();
+    return processModulesDependencies(indicator, app, modules, project);
+  }
 
+  /**
+   * Performs references analysis for given module
+   *
+   * @param indicator progress
+   * @param app       application
+   * @param project   project
+   * @param modules    modules
+   * @return set of module dependencies that could be removed
+   */
+  @NotNull
+  public static RemoveModulesModel processModulesDependencies(@NotNull final ProgressIndicator indicator,
+                                                              @NotNull Application app,
+                                                              @NotNull Module[] modules,
+                                                              @NotNull Project project) {
+    final RemoveModulesModel result = new RemoveModulesModel();
     for (int i = 0; i < modules.length; i++) {
       final Module module = modules[i];
 

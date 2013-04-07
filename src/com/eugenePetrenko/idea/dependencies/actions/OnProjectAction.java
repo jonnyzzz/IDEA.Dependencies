@@ -24,6 +24,7 @@ public class OnProjectAction extends AnAction {
   public void update(AnActionEvent e) {
     super.update(e);
 
+    if (e == null) return;
     e.getPresentation().setEnabled(null != e.getData(PROJECT));
   }
 
@@ -33,7 +34,7 @@ public class OnProjectAction extends AnAction {
     final Project project = anActionEvent.getData(PROJECT);
     if (project == null) return;
 
-    ProgressManager.getInstance().run(new Task.Backgroundable(project, "Dependencies\u2026", true, BackgroundFromStartOption.getInstance()) {
+    ProgressManager.getInstance().run(new Task.Backgroundable(project, "Dependencies of All modules", true, BackgroundFromStartOption.getInstance()) {
       public void run(@NotNull final ProgressIndicator indicator) {
         final RemoveModulesModel result = ModuleDependenciesAnalyzer.processAllDependencies(indicator, ApplicationManager.getApplication(), project);
         PostAction.completeProcess(project, result);
