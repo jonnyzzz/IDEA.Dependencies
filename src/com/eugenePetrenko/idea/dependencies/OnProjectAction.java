@@ -10,15 +10,7 @@ import org.jetbrains.annotations.Nullable;
  * Created by Eugene Petrenko (eugene.petrenko@gmail.com)
  * Date: 06.04.13 11:16
  */
-public class ModuleDependenciesAction extends AnAction {
-  @Override
-  public void update(@Nullable AnActionEvent e) {
-    super.update(e);
-
-    //TODO: implement me
-  }
-
-
+public class OnProjectAction extends AnAction {
 
   @Override
   public void actionPerformed(@Nullable final AnActionEvent anActionEvent) {
@@ -30,7 +22,7 @@ public class ModuleDependenciesAction extends AnAction {
     final ModuleDependenciesAnalyzer component = project.getComponent(ModuleDependenciesAnalyzer.class);
     if (component == null) return;
 
-    component.processDependencies();
+    component.processProjectDependencies();
   }
 
 }

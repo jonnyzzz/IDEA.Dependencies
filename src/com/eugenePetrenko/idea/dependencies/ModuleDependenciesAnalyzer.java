@@ -14,19 +14,15 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectCoreUtil;
 import com.intellij.openapi.project.ProjectUtil;
-import com.intellij.openapi.roots.ContentIterator;
-import com.intellij.openapi.roots.ModuleFileIndex;
-import com.intellij.openapi.roots.ModuleRootManager;
-import com.intellij.openapi.roots.libraries.Library;
+import com.intellij.openapi.roots.*;
+import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vcs.changes.BackgroundFromStartOption;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
-import com.intellij.psi.impl.PsiFileEx;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
 
 /**
  * Created by Eugene Petrenko (eugene.petrenko@gmail.com)
@@ -59,8 +55,7 @@ public class ModuleDependenciesAnalyzer implements ProjectComponent {
     return "jonnyzzz" + getClass().getSimpleName();
   }
 
-  public void processDependencies() {
-
+  public void processProjectDependencies() {
     ProgressManager.getInstance().run(new Task.Backgroundable(myProject, "Analysis\u2026", true, BackgroundFromStartOption.getInstance()) {
       public void run(@NotNull final ProgressIndicator indicator) {
         final Application app = ApplicationManager.getApplication();
@@ -78,68 +73,99 @@ public class ModuleDependenciesAnalyzer implements ProjectComponent {
           indicator.setText(module.getName());
           indicator.setFraction((double) i / (double) modules.length);
 
-          final PsiManager psiManager = PsiManager.getInstance(myProject);
-          psiManager.startBatchFilesProcessingMode();
+          processModuleDependencies(indicator, app, myProject, module);
+        }
+      }
+    });
+  }
 
-          try {
-            final Set<Module> myVisitedModules = new HashSet<Module>();
-            final Set<Library> myVisitedLibraries = new HashSet<Library>();
+  public void processModuleDependencies(@NotNull final Module module) {
+    ProgressManager.getInstance().run(new Task.Backgroundable(myProject, "Analysis of module " + module.getName() + "\u2026", true, BackgroundFromStartOption.getInstance()) {
+      public void run(@NotNull final ProgressIndicator indicator) {
+        final Application app = ApplicationManager.getApplication();
+        processModuleDependencies(indicator, app, myProject, module);
+      }
+    });
+  }
 
-            final ModuleRootManager roots = ModuleRootManager.getInstance(module);
-            final ModuleFileIndex index = roots.getFileIndex();
-            index.iterateContent(new ContentIterator() {
-              public boolean processFile(@NotNull final VirtualFile fileOrDir) {
-                indicator.checkCanceled();
+  private void processModuleDependencies(@NotNull final ProgressIndicator indicator,
+                                         @NotNull final Application app,
+                                         @NotNull final Project project,
+                                         @NotNull final Module module) {
+    final LibOrModuleSet dependencies = new LibOrModuleSet();
 
-                if (fileOrDir.isDirectory()) return true;
-                if (ProjectCoreUtil.isProjectOrWorkspaceFile(fileOrDir)) return true;
-                if (!index.isInContent(fileOrDir)) return true;
+    final PsiManager psiManager = PsiManager.getInstance(project);
+    final ModuleRootManager roots = ModuleRootManager.getInstance(module);
+    final ModuleFileIndex index = roots.getFileIndex();
+    index.iterateContent(new ContentIterator() {
+      public boolean processFile(@NotNull final VirtualFile fileOrDir) {
+        indicator.checkCanceled();
 
+        if (fileOrDir.isDirectory()) return true;
+        if (ProjectCoreUtil.isProjectOrWorkspaceFile(fileOrDir)) return true;
+        if (!index.isInContent(fileOrDir)) return true;
 
-                app.runReadAction(new Runnable() {
-                  public void run() {
-                    final PsiFile psiFile = psiManager.findFile(fileOrDir);
+        app.runReadAction(new Runnable() {
+          public void run() {
+            final PsiFile psiFile = psiManager.findFile(fileOrDir);
 
-                    if (psiFile == null) return;
-                    if (!psiFile.isValid()) return;
-                    if (!ProblemHighlightFilter.shouldProcessFileInBatch(psiFile)) return;
+            if (psiFile == null) return;
+            if (!psiFile.isValid()) return;
+            if (!ProblemHighlightFilter.shouldProcessFileInBatch(psiFile)) return;
 
-                    indicator.checkCanceled();
-                    indicator.setText2("" + ProjectUtil.calcRelativeToProjectPath(fileOrDir, myProject));
+            indicator.checkCanceled();
+            indicator.setText2("" + ProjectUtil.calcRelativeToProjectPath(fileOrDir, myProject));
 
-                    psiFile.putUserData(PsiFileEx.BATCH_REFERENCE_PROCESSING, Boolean.TRUE);
+            psiFile.accept(new PsiRecursiveElementVisitor() {
+              @Override
+              public void visitElement(final PsiElement element) {
+                super.visitElement(element);
 
-                    psiFile.accept(new PsiRecursiveElementVisitor() {
-                      @Override
-                      public void visitElement(final PsiElement element) {
-                        super.visitElement(element);
+                for (final PsiReference ref : element.getReferences()) {
+                  final PsiElement resolved = ref.resolve();
+                  if (resolved == null) continue;
+                  if (resolved.getProject().isDefault()) continue;
+                  if (!resolved.isValid()) continue;
 
-                        for (final PsiReference ref : element.getReferences()) {
-                          final PsiElement resolved = ref.resolve();
-                          if (resolved == null) continue;
-                          if (!resolved.isValid()) continue;
-                          final PsiFile resolvedFile = resolved.getContainingFile();
-                          if (resolvedFile == null) continue;
+                  final PsiFile file = resolved.getContainingFile();
+                  if (file == null) continue;
+                  if (!file.isValid()) continue;
 
-                          ///
-                          continue;
-                        }
-                      }
-                    });
+                  final VirtualFile virtual = file.getVirtualFile();
+                  if (virtual == null) continue;
+                  if (!virtual.isValid()) continue;
 
-                    psiFile.putUserData(PsiFileEx.BATCH_REFERENCE_PROCESSING, null);
-                    psiManager.dropResolveCaches();
-                    InjectedLanguageManager.getInstance(psiFile.getProject()).dropFileCaches(psiFile);
+                  final List<OrderEntry> refs = ProjectRootManager.getInstance(project).getFileIndex().getOrderEntriesForFile(virtual);
+                  for (OrderEntry e : refs) {
+                    dependencies.addDependency(e);
                   }
-                });
-
-                return true;
+                }
               }
             });
-          } finally {
-            psiManager.finishBatchFilesProcessingMode();
+
+            psiManager.dropResolveCaches();
+            InjectedLanguageManager.getInstance(psiFile.getProject()).dropFileCaches(psiFile);
+          }
+        });
+
+        return true;
+      }
+    });
+
+    final LibOrModuleSet toRemove = new LibOrModuleSet();
+    app.runReadAction(new Runnable() {
+      public void run() {
+        for (OrderEntry e : ModuleRootManager.getInstance(module).getOrderEntries()) {
+          if (!dependencies.contains(e)) {
+            toRemove.addDependency(e);
           }
         }
+      }
+    });
+
+    app.invokeLater(new Runnable() {
+      public void run() {
+        Messages.showInfoMessage(myProject, "Analysis completed:\n" + toRemove, "Jonnyzzz");
       }
     });
   }

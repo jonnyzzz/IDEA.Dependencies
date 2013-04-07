@@ -40,7 +40,8 @@
     <group id="jonnyzzz.Actions" popup="true" text="jonnyzzz">
       <add-to-group anchor="before" relative-to-action="WindowMenu" group-id="MainMenu"/>
 
-      <action class="com.eugenePetrenko.idea.dependencies.ModuleDependenciesAction" text="JAnalyze" id="janalyze"/>
+      <action class="com.eugenePetrenko.idea.dependencies.OnProjectAction" text="Check global dependencies" id="jproject"/>
+      <action class="com.eugenePetrenko.idea.dependencies.OnModuleAction" text="Check module dependencies" id="jmodule"/>
     </group>
   </actions>
 
