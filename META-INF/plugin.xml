@@ -26,22 +26,28 @@
   <depends>com.intellij.modules.lang</depends>
 
   <application-components>
+    <component>
+      <implementation-class>com.eugenePetrenko.idea.dependencies.ModuleDependenciesAnalyzer</implementation-class>
+    </component>
     <!-- Add your application components here -->
   </application-components>
 
   <project-components>
-    <component>
-      <implementation-class>com.eugenePetrenko.idea.dependencies.ModuleDependenciesAnalyzer</implementation-class>
-    </component>
     <!-- Add your project components here -->
   </project-components>
 
   <actions>
-    <group id="jonnyzzz.Actions" popup="true" text="jonnyzzz">
-      <add-to-group anchor="before" relative-to-action="WindowMenu" group-id="MainMenu"/>
+    <group id="jonnyzzz.Actions" popup="true" text="DependenciesEx">
+      <add-to-group anchor="last" group-id="ToolsMenu"/>
 
       <action class="com.eugenePetrenko.idea.dependencies.OnProjectAction" text="Check global dependencies" id="jproject"/>
       <action class="com.eugenePetrenko.idea.dependencies.OnModuleAction" text="Check module dependencies" id="jmodule"/>
+    </group>
+
+    <group>
+      <add-to-group group-id="ProjectViewPopupMenu"/>
+
+      <reference ref="jonnyzzz.Actions"/>
     </group>
   </actions>
 
