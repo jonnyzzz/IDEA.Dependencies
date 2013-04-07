@@ -18,9 +18,7 @@ import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
 import com.intellij.util.Processor;
-import com.intellij.util.containers.Predicate;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -191,7 +189,7 @@ public class ModuleDependenciesAnalyzer implements ApplicationComponent {
     app.runReadAction(new Runnable() {
       public void run() {
         for (OrderEntry e : ModuleRootManager.getInstance(module).getOrderEntries()) {
-          if (REMOVABLE_DEPENDENCY.apply(e) && !dependencies.contains(e)) {
+          if (DependenciesFilter.REMOVABLE_DEPENDENCY.apply(e) && !dependencies.contains(e)) {
             toRemove.addDependency(e);
           }
         }
@@ -200,22 +198,4 @@ public class ModuleDependenciesAnalyzer implements ApplicationComponent {
 
     return toRemove;
   }
-
-
-  private static final Predicate<OrderEntry> REMOVABLE_DEPENDENCY = new Predicate<OrderEntry>() {
-    public boolean apply(@Nullable OrderEntry input) {
-      return input != null && input.accept(new RootPolicy<Boolean>(){
-        @Override
-        public Boolean visitModuleOrderEntry(ModuleOrderEntry moduleOrderEntry, Boolean value) {
-          return true;
-        }
-
-        @Override
-        public Boolean visitLibraryOrderEntry(LibraryOrderEntry libraryOrderEntry, Boolean value) {
-          final DependencyScope scope = libraryOrderEntry.getScope();
-          return scope == DependencyScope.COMPILE || scope == DependencyScope.TEST;
-        }
-      }, false);
-    }
-  };
 }
