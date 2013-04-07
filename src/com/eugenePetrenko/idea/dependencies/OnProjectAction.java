@@ -14,6 +14,7 @@ import com.intellij.openapi.vcs.changes.BackgroundFromStartOption;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Iterator;
 import java.util.Map;
 
 import static com.intellij.openapi.actionSystem.PlatformDataKeys.PROJECT;
@@ -46,11 +47,23 @@ public class OnProjectAction extends AnAction {
         final Application app = ApplicationManager.getApplication();
         final Map<Module,LibOrModuleSet> result = component.processAllDependencies(indicator, app, project);
 
-        app.invokeLater(new Runnable() {
-          public void run() {
-            Messages.showInfoMessage(project, "Analysis completed:\n" + result, "Jonnyzzz");
-          }
-        });
+        for (Iterator<Map.Entry<Module, LibOrModuleSet>> it = result.entrySet().iterator(); it.hasNext(); ) {
+          if (it.next().getValue().isEmpty()) it.remove();
+        }
+
+        if (result.isEmpty()) {
+          app.invokeLater(new Runnable() {
+            public void run() {
+              Messages.showInfoMessage(project, "No problems detected", "Jonnyzzz");
+            }
+          });
+        } else {
+          app.invokeLater(new Runnable() {
+            public void run() {
+              Messages.showInfoMessage(project, "Detected not-used dependencies\n" + result, "Jonnyzzz");
+            }
+          });
+        }
       }
     });
   }

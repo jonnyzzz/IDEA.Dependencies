@@ -49,11 +49,19 @@ public class OnModuleAction extends AnAction {
 
       public void run(@NotNull final ProgressIndicator indicator) {
         final LibOrModuleSet toRemove = component.processModuleDependencies(indicator, app, myProject, module);
-        app.invokeLater(new Runnable() {
-          public void run() {
-            Messages.showInfoMessage(project, "Analysis completed:\n" + toRemove, "Jonnyzzz");
-          }
-        });
+        if (toRemove.isEmpty()) {
+          app.invokeLater(new Runnable() {
+            public void run() {
+              Messages.showInfoMessage(project, "No problems detected", "Jonnyzzz");
+            }
+          });
+        } else {
+          app.invokeLater(new Runnable() {
+            public void run() {
+              Messages.showInfoMessage(project, "Analysis completed:\n" + toRemove, "Jonnyzzz");
+            }
+          });
+        }
       }
     });
   }

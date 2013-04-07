@@ -6,7 +6,6 @@ import com.intellij.openapi.roots.ModuleOrderEntry;
 import com.intellij.openapi.roots.OrderEntry;
 import com.intellij.openapi.roots.RootPolicy;
 import com.intellij.openapi.roots.libraries.Library;
-import com.intellij.openapi.util.text.StringUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -38,12 +37,30 @@ public class LibOrModuleSet {
     e.accept(ADD, null);
   }
 
+  public boolean isEmpty() {
+    return myLibs.isEmpty() && myModules.isEmpty();
+  }
+
   @Override
   public String toString() {
-    return "LibOrModuleSet{" +
-            "Modules=" + StringUtil.join(myModules, "\n") +
-            ", Libs=" + StringUtil.join(myLibs, "\n") +
-            '}';
+    StringBuilder sb = new StringBuilder();
+    sb.append("LibOrModuleSet{\n");
+
+    if (!myModules.isEmpty()) {
+      sb.append("  Modules:\n");
+      for (String m : myModules) {
+        sb.append("    ").append(m).append("\n");
+      }
+    }
+
+    if (!myLibs.isEmpty()) {
+      sb.append("  Libraries:\n");
+      for (String m : myLibs) {
+        sb.append("    ").append(m).append("\n");
+      }
+    }
+    sb.append("}");
+    return sb.toString();
   }
 
   private final RootPolicy<Void> ADD = new RootPolicy<Void>(){
