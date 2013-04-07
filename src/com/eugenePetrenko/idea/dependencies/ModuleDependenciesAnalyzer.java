@@ -65,25 +65,28 @@ public class ModuleDependenciesAnalyzer {
                                                               @NotNull Module[] modules,
                                                               @NotNull Project project) {
     final RemoveModulesModel result = new RemoveModulesModel();
+    final double length = (double) modules.length;
+    final double outerStep = 1.0 / length;
+
     for (int i = 0; i < modules.length; i++) {
       final Module module = modules[i];
 
       indicator.setIndeterminate(false);
       indicator.checkCanceled();
       indicator.setText(module.getName());
-      final double outerFraction = (double) i / (double) modules.length;
-      final double outerStep = 1.0 / modules.length;
+
+      final double outerFraction = (double) i / length;
       indicator.setFraction(outerFraction);
 
       DelegatingProgressIndicator subProgress = new DelegatingProgressIndicator(indicator) {
         @Override
         public double getFraction() {
-          return (super.getFraction() - outerFraction) * outerStep;
+          return (super.getFraction() - outerFraction) / outerStep;
         }
 
         @Override
         public void setFraction(double fraction) {
-          super.setFraction(outerFraction + fraction / outerStep);
+          super.setFraction(outerFraction + fraction * outerStep);
         }
       };
       result.addAllRemoves(processModuleDependencies(subProgress, app, project, module));
