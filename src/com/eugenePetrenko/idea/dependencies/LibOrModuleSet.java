@@ -89,7 +89,10 @@ public class LibOrModuleSet {
     @Override
     public Boolean visitLibraryOrderEntry(LibraryOrderEntry libraryOrderEntry, Boolean value) {
       final Library lib = libraryOrderEntry.getLibrary();
-      return lib != null && myLibs.contains(lib.getName());
+      if (lib == null) return false;
+      final String name = lib.getName();
+      if (name == null) return false;
+      return myLibs.contains(name);
     }
 
     @Override
