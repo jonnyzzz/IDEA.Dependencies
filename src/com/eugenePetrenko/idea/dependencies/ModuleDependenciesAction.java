@@ -18,6 +18,8 @@ public class ModuleDependenciesAction extends AnAction {
     //TODO: implement me
   }
 
+
+
   @Override
   public void actionPerformed(@Nullable final AnActionEvent anActionEvent) {
     if (anActionEvent == null) return;
