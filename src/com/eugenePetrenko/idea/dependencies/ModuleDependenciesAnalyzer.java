@@ -2,6 +2,7 @@ package com.eugenePetrenko.idea.dependencies;
 
 import com.intellij.codeInsight.daemon.ProblemHighlightFilter;
 import com.intellij.concurrency.JobLauncher;
+import com.intellij.ide.util.DelegatingProgressIndicator;
 import com.intellij.lang.injection.InjectedLanguageManager;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.components.ApplicationComponent;
@@ -65,9 +66,22 @@ public class ModuleDependenciesAnalyzer implements ApplicationComponent {
       indicator.setIndeterminate(false);
       indicator.checkCanceled();
       indicator.setText(module.getName());
-      indicator.setFraction((double) i / (double) modules.length);
+      final double outerFraction = (double) i / (double) modules.length;
+      final double outerStep = 1.0 / modules.length;
+      indicator.setFraction(outerFraction);
 
-      result.put(module, processModuleDependencies(indicator, app, project, module));
+      DelegatingProgressIndicator subProgress = new DelegatingProgressIndicator(indicator){
+        @Override
+        public double getFraction() {
+          return (super.getFraction() - outerFraction) * outerStep;
+        }
+
+        @Override
+        public void setFraction(double fraction) {
+          super.setFraction(outerFraction + fraction / outerStep);
+        }
+      };
+      result.put(module, processModuleDependencies(subProgress, app, project, module));
     }
 
     return result;
