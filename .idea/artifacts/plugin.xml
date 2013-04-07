@@ -1,0 +1,15 @@
+<component name="ArtifactManager">
+  <artifact name="plugin">
+    <output-path>$PROJECT_DIR$/out/artifacts/plugin</output-path>
+    <root id="root">
+      <element id="directory" name="lib">
+        <element id="archive" name="jonnyzzz.dependencies.jar">
+          <element id="module-output" name="IDEA.Dependencies" />
+          <element id="directory" name="META-INF">
+            <element id="file-copy" path="$PROJECT_DIR$/META-INF/plugin.xml" />
+          </element>
+        </element>
+      </element>
+    </root>
+  </artifact>
+</component>

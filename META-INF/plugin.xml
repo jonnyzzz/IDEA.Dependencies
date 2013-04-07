@@ -1,17 +1,15 @@
 <idea-plugin version="2">
-  <id>com.yourcompany.unique.plugin.id</id>
-  <name>Plugin display name here</name>
+  <id>com.eugenePetrenko.idea.dependencies</id>
+  <name>Jonnyzzz Dependencies</name>
   <version>1.0</version>
-  <vendor email="support@yourcompany.com" url="http://www.yourcompany.com">Eugene Petrenko</vendor>
+  <vendor email="idea@jonnyzzz.name" url="http://blog.jonnyzzz.name">Eugene Petrenko</vendor>
 
   <description><![CDATA[
-      Enter short description for your plugin here.<br>
-      <small>most HTML tags may be used</small>
+      This plugin provide an action to analyze project/modules for unused dependencies
       ]]></description>
 
   <change-notes><![CDATA[
-      Add change notes here.<br>
-      <small>most HTML tags may be used</small>
+      Initial release
       ]]>
   </change-notes>
 
@@ -44,7 +42,7 @@
     <group>
       <add-to-group group-id="ProjectViewPopupMenu"/>
 
-      <reference ref="jonnyzzz.Actions"/>
+      <reference ref="jmodule"/>
     </group>
   </actions>
 
