@@ -5,8 +5,6 @@ import com.intellij.concurrency.JobLauncher;
 import com.intellij.ide.util.DelegatingProgressIndicator;
 import com.intellij.lang.injection.InjectedLanguageManager;
 import com.intellij.openapi.application.Application;
-import com.intellij.openapi.components.ApplicationComponent;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -20,27 +18,17 @@ import com.intellij.psi.*;
 import com.intellij.util.Processor;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by Eugene Petrenko (eugene.petrenko@gmail.com)
  * Date: 06.04.13 11:09
  */
-public class ModuleDependenciesAnalyzer implements ApplicationComponent {
-  private static final Logger LOG = Logger.getInstance(ModuleDependenciesAnalyzer.class.getName());
-
-  public void initComponent() {
-  }
-
-  public void disposeComponent() {
-  }
-
-  @NotNull
-  public String getComponentName() {
-    return "jonnyzzz" + getClass().getSimpleName();
-  }
-
+public class ModuleDependenciesAnalyzer {
   /**
    * Performs references analysis for all modules
    *
@@ -50,16 +38,17 @@ public class ModuleDependenciesAnalyzer implements ApplicationComponent {
    * @return set of module dependencies that could be removed
    */
   @NotNull
-  public Map<Module, LibOrModuleSet> processAllDependencies(@NotNull final ProgressIndicator indicator,
-                                                            @NotNull final Application app,
-                                                            @NotNull final Project project) {
+  public static RemoveModulesModel processAllDependencies(@NotNull final ProgressIndicator indicator,
+                                                          @NotNull final Application app,
+                                                          @NotNull final Project project) {
     final Module[] modules = app.runReadAction(new Computable<Module[]>() {
       public Module[] compute() {
         return ModuleManager.getInstance(project).getSortedModules();
       }
     });
 
-    final Map<Module, LibOrModuleSet> result = new HashMap<Module, LibOrModuleSet>();
+    final RemoveModulesModel result = new RemoveModulesModel();
+
     for (int i = 0; i < modules.length; i++) {
       final Module module = modules[i];
 
@@ -70,7 +59,7 @@ public class ModuleDependenciesAnalyzer implements ApplicationComponent {
       final double outerStep = 1.0 / modules.length;
       indicator.setFraction(outerFraction);
 
-      DelegatingProgressIndicator subProgress = new DelegatingProgressIndicator(indicator){
+      DelegatingProgressIndicator subProgress = new DelegatingProgressIndicator(indicator) {
         @Override
         public double getFraction() {
           return (super.getFraction() - outerFraction) * outerStep;
@@ -81,7 +70,7 @@ public class ModuleDependenciesAnalyzer implements ApplicationComponent {
           super.setFraction(outerFraction + fraction / outerStep);
         }
       };
-      result.put(module, processModuleDependencies(subProgress, app, project, module));
+      result.addAllRemoves(processModuleDependencies(subProgress, app, project, module));
     }
 
     return result;
@@ -98,10 +87,10 @@ public class ModuleDependenciesAnalyzer implements ApplicationComponent {
    * @return set of module dependencies that could be removed
    */
   @NotNull
-  public LibOrModuleSet processModuleDependencies(@NotNull final ProgressIndicator indicator,
-                                                  @NotNull final Application app,
-                                                  @NotNull final Project project,
-                                                  @NotNull final Module module) {
+  public static RemoveModulesModel processModuleDependencies(@NotNull final ProgressIndicator indicator,
+                                                             @NotNull final Application app,
+                                                             @NotNull final Project project,
+                                                             @NotNull final Module module) {
     final LibOrModuleSet dependencies = new LibOrModuleSet();
 
     final PsiManager psiManager = PsiManager.getInstance(project);
@@ -196,6 +185,8 @@ public class ModuleDependenciesAnalyzer implements ApplicationComponent {
       }
     });
 
-    return toRemove;
+    final RemoveModulesModel removeModulesModel = new RemoveModulesModel();
+    removeModulesModel.addRemoves(module, toRemove);
+    return removeModulesModel;
   }
 }

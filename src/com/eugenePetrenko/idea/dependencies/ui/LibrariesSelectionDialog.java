@@ -1,6 +1,8 @@
 package com.eugenePetrenko.idea.dependencies.ui;
 
 import com.eugenePetrenko.idea.dependencies.DependenciesFilter;
+import com.eugenePetrenko.idea.dependencies.LibOrModuleSet;
+import com.eugenePetrenko.idea.dependencies.RemoveModulesModel;
 import com.intellij.ide.DataManager;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.module.Module;
@@ -38,16 +40,22 @@ import static com.intellij.ui.SimpleTextAttributes.*;
  * @author Eugene Petrenko (eugene.petrenko@jetbrains.com)
  */
 public class LibrariesSelectionDialog extends DialogWrapper {
+  private static final DataKey<DependencyNodeBase> DEPENDENCY_NODE = DataKey.create("jdependency_node");
+  private static final DataKey<Collection<DependencyNodeBase>> DEPENDENCY_NODE_ARRAY = DataKey.create("jdependency_nodes");
+
   @NotNull
   private final Project myProject;
   @NotNull
+  private final RemoveModulesModel myModel;
+  @NotNull
   private final Tree myTree;
 
-  public LibrariesSelectionDialog(@NotNull Project project) {
+  public LibrariesSelectionDialog(@NotNull Project project, @NotNull final RemoveModulesModel model) {
     super(project, true);
     myProject = project;
+    myModel = model;
 
-    myTree = new Tree(new RootNode(myProject));
+    myTree = new Tree(new RootNode(myProject, myModel));
     myTree.setRootVisible(false);
     myTree.setCellRenderer(new CellRenderer());
     init();
@@ -59,8 +67,10 @@ public class LibrariesSelectionDialog extends DialogWrapper {
     setOKButtonText("Remove Dependencies");
   }
 
-  private static final DataKey<DependencyNodeBase> DEPENDENCY_NODE = DataKey.create("jdependency_node");
-  private static final DataKey<Collection<DependencyNodeBase>> DEPENDENCY_NODE_ARRAY = DataKey.create("jdependency_nodes");
+  @NotNull
+  public RemoveModulesModel getModel() {
+    return myModel;
+  }
 
   @Nullable
   @Override
@@ -92,7 +102,7 @@ public class LibrariesSelectionDialog extends DialogWrapper {
           for (TreePath treePath : myTree.getSelectionModel().getSelectionPaths()) {
             Object obj = treePath.getLastPathComponent();
             if (obj instanceof DependencyNodeBase) {
-              result.add((DependencyNodeBase)obj);
+              result.add((DependencyNodeBase) obj);
             }
             if (obj instanceof ModuleNode) {
               result.addAll(((ModuleNode) obj).getChildren());
@@ -134,53 +144,65 @@ public class LibrariesSelectionDialog extends DialogWrapper {
   }
 
   private class RootNode extends DefaultMutableTreeNode {
+    @NotNull
     private final Project myProject;
-    private RootNode(@NotNull Project project) {
+    @NotNull
+    private final RemoveModulesModel myModel;
+
+    private RootNode(@NotNull final Project project, @NotNull final RemoveModulesModel model) {
       myProject = project;
+      myModel = model;
       children = new Vector();
       Module[] modules = ModuleManager.getInstance(project).getSortedModules();
       Arrays.sort(modules, MODULE_COMPARATOR);
       for (Module module : modules) {
+        final LibOrModuleSet filter = myModel.forModule(module);
+        if (filter == null || filter.isEmpty()) continue;
         //noinspection unchecked
-        children.add(new ModuleNode(module));
+        children.add(new ModuleNode(module, filter));
       }
     }
   }
 
   private interface ModuleHoldingNode {
-    @NotNull Module getModule();
+    @NotNull
+    Module getModule();
   }
 
   private interface LibraryHoldingNode {
-    @NotNull Library getLibrary();
+    @NotNull
+    Library getLibrary();
   }
 
   private class ModuleNode extends DefaultMutableTreeNode implements ModuleHoldingNode {
     private final Module myModule;
     private final Collection<DependencyNodeBase> myChildren = new ArrayList<DependencyNodeBase>();
 
-    private ModuleNode(@NotNull Module module) {
+    private ModuleNode(@NotNull Module module, @NotNull final LibOrModuleSet libOrModuleSet) {
       myModule = module;
-      ModuleRootManager.getInstance(module).processOrder(new RootPolicy<Void>(){
+      ModuleRootManager.getInstance(module).processOrder(new RootPolicy<Void>() {
         @Override
-        public Void visitModuleOrderEntry(ModuleOrderEntry moduleOrderEntry, Void value) {
+        public Void visitModuleOrderEntry(@NotNull ModuleOrderEntry moduleOrderEntry, Void value) {
           if (!DependenciesFilter.REMOVABLE_DEPENDENCY.apply(moduleOrderEntry)) return null;
 
           final Module mod = moduleOrderEntry.getModule();
           if (mod == null) return null;
-          //noinspection unchecked
-          myChildren.add(new DependencyModuleNode(mod));
-
+          addNode(new DependencyModuleNode(libOrModuleSet, mod));
           return null;
         }
 
+        private void addNode(@NotNull DependencyNodeBase e) {
+          if (e.intersects(libOrModuleSet)) {
+            myChildren.add(e);
+          }
+        }
+
         @Override
-        public Void visitLibraryOrderEntry(LibraryOrderEntry libraryOrderEntry, Void value) {
+        public Void visitLibraryOrderEntry(@NotNull LibraryOrderEntry libraryOrderEntry, Void value) {
           if (!DependenciesFilter.REMOVABLE_DEPENDENCY.apply(libraryOrderEntry)) return null;
           Library lib = libraryOrderEntry.getLibrary();
           if (lib == null) return null;
-          //noinspection unchecked
-          myChildren.add(new DependencyLibNode(lib));
+          addNode(new DependencyLibNode(libOrModuleSet, lib));
 
           return null;
         }
@@ -200,7 +222,12 @@ public class LibrariesSelectionDialog extends DialogWrapper {
   }
 
   private abstract class DependencyNodeBase extends DefaultMutableTreeNode {
+    protected final LibOrModuleSet myFilter;
     private boolean myIsRemoved;
+
+    protected DependencyNodeBase(@NotNull final LibOrModuleSet filter) {
+      myFilter = filter;
+    }
 
     public boolean isRemoved() {
       return myIsRemoved;
@@ -209,12 +236,15 @@ public class LibrariesSelectionDialog extends DialogWrapper {
     public void setRemoved(boolean isRemoved) {
       myIsRemoved = isRemoved;
     }
+
+    public abstract boolean intersects(@NotNull LibOrModuleSet set);
   }
 
   private class DependencyModuleNode extends DependencyNodeBase implements ModuleHoldingNode {
     private final Module myModule;
 
-    private DependencyModuleNode(@NotNull Module module) {
+    private DependencyModuleNode(@NotNull LibOrModuleSet filter, @NotNull Module module) {
+      super(filter);
       myModule = module;
     }
 
@@ -222,21 +252,51 @@ public class LibrariesSelectionDialog extends DialogWrapper {
     public Module getModule() {
       return myModule;
     }
+
+    @Override
+    public void setRemoved(boolean isRemoved) {
+      super.setRemoved(isRemoved);
+      if (isRemoved) {
+        myFilter.removeDependency(getModule());
+      } else {
+        myFilter.addDependency(getModule());
+      }
+    }
+
+    @Override
+    public boolean intersects(@NotNull LibOrModuleSet set) {
+      return set.contains(getModule());
+    }
   }
 
   private class DependencyLibNode extends DependencyNodeBase implements LibraryHoldingNode {
     private final Library myLib;
 
-    private DependencyLibNode(@NotNull Library myModule) {
-      myLib = myModule;
+    private DependencyLibNode(@NotNull LibOrModuleSet filter, @NotNull Library lib) {
+      super(filter);
+      myLib = lib;
     }
 
     @NotNull
     public Library getLibrary() {
       return myLib;
     }
-  }
 
+    @Override
+    public boolean intersects(@NotNull LibOrModuleSet set) {
+      return set.contains(getLibrary());
+    }
+
+    @Override
+    public void setRemoved(boolean isRemoved) {
+      super.setRemoved(isRemoved);
+      if (isRemoved) {
+        myFilter.removeDependency(getLibrary());
+      } else {
+        myFilter.addDependency(getLibrary());
+      }
+    }
+  }
 
   private class CellRenderer extends ColoredTreeCellRenderer {
     @Override

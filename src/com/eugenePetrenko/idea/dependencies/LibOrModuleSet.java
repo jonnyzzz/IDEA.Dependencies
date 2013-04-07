@@ -22,6 +22,16 @@ public class LibOrModuleSet {
   private final Set<String> myModules = new TreeSet<String>();
   private final Set<String> myLibs = new TreeSet<String>();
 
+  public boolean contains(@Nullable Module mod) {
+    return mod != null && myModules.contains(mod.getName());
+  }
+
+  public boolean contains(@Nullable Library lib) {
+    if (lib == null) return false;
+    final String name = lib.getName();
+    return name != null && myLibs.contains(name);
+  }
+
   public boolean contains(@Nullable OrderEntry e) {
     if (e == null) return false;
     return e.accept(CONTAINS, false);
@@ -35,6 +45,39 @@ public class LibOrModuleSet {
 
   public void addDependency(@NotNull OrderEntry e) {
     e.accept(ADD, null);
+  }
+
+  public void addDependency(@Nullable final Library lib) {
+    if (lib == null) return;
+    final String name = lib.getName();
+    if (name == null) return;
+    myLibs.add(name);
+  }
+
+  public boolean removeDependency(@Nullable final Library lib) {
+    if (lib == null) return true;
+    String name = lib.getName();
+    if (name == null) return true;
+    myLibs.remove(name);
+    return false;
+  }
+
+  public boolean addDependency(@Nullable Module module) {
+    if (module == null) return true;
+    final String name = module.getName();
+    myModules.add(name);
+    return false;
+  }
+
+  public boolean removeDependency(@Nullable Module module) {
+    if (module == null) return true;
+    final String name = module.getName();
+    myModules.remove(name);
+    return false;
+  }
+
+  public void removeDependency(@NotNull OrderEntry e) {
+    e.accept(REMOVE, null);
   }
 
   public boolean isEmpty() {
@@ -66,21 +109,27 @@ public class LibOrModuleSet {
   private final RootPolicy<Void> ADD = new RootPolicy<Void>(){
     @Override
     public Void visitLibraryOrderEntry(LibraryOrderEntry libraryOrderEntry, Void value) {
-      Library lib1 = libraryOrderEntry.getLibrary();
-      if (lib1 == null) return null;
-      String name = lib1.getName();
-      if (name == null) return null;
-      myLibs.add(name);
-
+      addDependency(libraryOrderEntry.getLibrary());
       return null;
     }
 
     @Override
     public Void visitModuleOrderEntry(ModuleOrderEntry moduleOrderEntry, Void value) {
-      final Module module = moduleOrderEntry.getModule();
-      if (module == null) return null;
-      final String name = module.getName();
-      myModules.add(name);
+      addDependency(moduleOrderEntry.getModule());
+      return null;
+    }
+  };
+
+  private final RootPolicy<Void> REMOVE = new RootPolicy<Void>(){
+    @Override
+    public Void visitLibraryOrderEntry(LibraryOrderEntry libraryOrderEntry, Void value) {
+      removeDependency(libraryOrderEntry.getLibrary());
+      return null;
+    }
+
+    @Override
+    public Void visitModuleOrderEntry(ModuleOrderEntry moduleOrderEntry, Void value) {
+      removeDependency(moduleOrderEntry.getModule());
       return null;
     }
   };
@@ -88,17 +137,12 @@ public class LibOrModuleSet {
   private final RootPolicy<Boolean> CONTAINS = new RootPolicy<Boolean>(){
     @Override
     public Boolean visitLibraryOrderEntry(LibraryOrderEntry libraryOrderEntry, Boolean value) {
-      final Library lib = libraryOrderEntry.getLibrary();
-      if (lib == null) return false;
-      final String name = lib.getName();
-      if (name == null) return false;
-      return myLibs.contains(name);
+      return contains(libraryOrderEntry.getLibrary());
     }
 
     @Override
     public Boolean visitModuleOrderEntry(ModuleOrderEntry moduleOrderEntry, Boolean value) {
-      final Module mod = moduleOrderEntry.getModule();
-      return mod != null && myModules.contains(mod.getName());
+      return contains(moduleOrderEntry.getModule());
     }
   };
 }

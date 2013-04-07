@@ -26,9 +26,6 @@
   <depends>com.intellij.modules.lang</depends>
 
   <application-components>
-    <component>
-      <implementation-class>com.eugenePetrenko.idea.dependencies.ModuleDependenciesAnalyzer</implementation-class>
-    </component>
     <!-- Add your application components here -->
   </application-components>
 
@@ -40,10 +37,8 @@
     <group id="jonnyzzz.Actions" popup="true" text="DependenciesEx">
       <add-to-group anchor="last" group-id="ToolsMenu"/>
 
-      <action class="com.eugenePetrenko.idea.dependencies.OnProjectAction" text="Check global dependencies" id="jproject"/>
-      <action class="com.eugenePetrenko.idea.dependencies.OnModuleAction" text="Check module dependencies" id="jmodule"/>
-      <separator />
-      <action class="com.eugenePetrenko.idea.dependencies.ui.TestAction" text="Test UI" id="jmock"/>
+      <action class="com.eugenePetrenko.idea.dependencies.actions.OnProjectAction" text="Check global dependencies" id="jproject"/>
+      <action class="com.eugenePetrenko.idea.dependencies.actions.OnModuleAction" text="Check module dependencies" id="jmodule"/>
     </group>
 
     <group>
