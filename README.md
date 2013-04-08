@@ -14,3 +14,8 @@ License
 =======
 Apache 2.0.
 See LICENSE.txt
+
+
+Plugin Binaries
+===============
+Checkout `releases` branch in the repo
