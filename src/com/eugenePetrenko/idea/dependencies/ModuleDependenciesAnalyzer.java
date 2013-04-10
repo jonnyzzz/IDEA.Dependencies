@@ -141,8 +141,9 @@ public class ModuleDependenciesAnalyzer {
         if (fileOrDir.isDirectory()) return true;
         if (ProjectCoreUtil.isProjectOrWorkspaceFile(fileOrDir)) return true;
         if (!moduleIndex.isInContent(fileOrDir)) return true;
-
-        allFiles.add(fileOrDir);
+        if (moduleIndex.isInSourceContent(fileOrDir) || moduleIndex.isInTestSourceContent(fileOrDir)) {
+          allFiles.add(fileOrDir);
+        }
         return true;
       }
     });
