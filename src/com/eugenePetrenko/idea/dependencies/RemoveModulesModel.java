@@ -17,6 +17,7 @@
 package com.eugenePetrenko.idea.dependencies;
 
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.util.text.StringUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -46,5 +47,20 @@ public class RemoveModulesModel {
 
   public boolean isEmpty() {
     return myModuleToRemove.isEmpty();
+  }
+
+  @Override
+  public String toString() {
+    final StringBuilder sb = new StringBuilder();
+    sb.append("RemoveModulesModel{\n");
+    for (Map.Entry<String, LibOrModuleSet> e : myModuleToRemove.entrySet()) {
+      sb.append("  ").append(e.getKey()).append(" =>\n");
+      for (String line : e.getValue().toString().split("[\n\r]+")) {
+        if (StringUtil.isEmptyOrSpaces(line)) continue;
+        sb.append("    ").append(line).append("\n");
+      }
+    }
+    sb.append('}');
+    return sb.toString();
   }
 }
