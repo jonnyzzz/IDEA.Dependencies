@@ -12,7 +12,9 @@ import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.module.ModuleWithNameAlreadyExists;
 import com.intellij.openapi.progress.EmptyProgressIndicator;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.roots.ModuleRootModificationUtil;
+import com.intellij.openapi.roots.*;
+import com.intellij.openapi.roots.libraries.Library;
+import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar;
 import com.intellij.testFramework.builders.JavaModuleFixtureBuilder;
 import com.intellij.testFramework.fixtures.*;
 import junit.framework.TestCase;
@@ -21,6 +23,7 @@ import org.junit.Assert;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 
 /**
  * Created by Eugene Petrenko (eugene.petrenko@gmail.com)
@@ -33,13 +36,13 @@ public class AnalyzerTestCase extends TestCase {
     protected File compute() throws IOException {
       String home = PathManager.getResourceRoot(getClass(), "/" + getClass().getName().replace('.', '/') + ".class");
       if (home == null) throw new IOException("Failed to find test data root");
-      if (home.startsWith("file://")){
+      if (home.startsWith("file://")) {
         home = home.substring("file://".length());
       }
       File file = new File(home).getCanonicalFile();
       while (file != null) {
         final File result = new File(file, "testData");
-        if (result.isDirectory()) return result;
+        if (result.isDirectory() && !file.getName().equals("test")) return result;
         file = file.getParentFile();
       }
       throw new IOException("Failed to find testData");
@@ -47,29 +50,52 @@ public class AnalyzerTestCase extends TestCase {
   };
 
   @NotNull
-  protected String testDataPath(@NotNull final String... path) throws IOException {
+  protected String testDataPath(@NotNull final String... path) {
     return testData(path).getPath();
   }
 
   @NotNull
-  protected File testData(@NotNull final String... path) throws IOException {
-    File result = myTestDataPath.get();
-    for (String s : path) {
-      result = new File(result, s);
+  protected File testData(@NotNull final String... path) {
+    try {
+      File result = myTestDataPath.get();
+      for (String s : path) {
+        result = new File(result, s);
+      }
+      if (!result.exists()) throw new IOException("Failed to find path: " + result);
+      return result;
+    } catch (IOException e) {
+      throw new RuntimeException(e.getMessage(), e);
     }
-    if (!result.exists()) throw new IOException("Failed to find path: " + result);
-    return result;
   }
 
   protected class ModuleBuilder {
     private final TestFixtureBuilder<IdeaProjectTestFixture> myHost;
-    private final JavaModuleFixtureBuilder myModule;
+    private final ModuleFixture myModule;
 
-    public ModuleBuilder(@NotNull final TestFixtureBuilder<IdeaProjectTestFixture> host) throws Exception {
+    public ModuleBuilder(@NotNull final TestFixtureBuilder<IdeaProjectTestFixture> host,
+                         @NotNull final String name,
+                         @NotNull final String[] path) throws Exception {
       myHost = host;
-      myModule = myHost.addModule(JavaModuleFixtureBuilder.class);
-      myModule.getFixture().setUp();
-      myModule.setMockJdkLevel(JavaModuleFixtureBuilder.MockJdkLevel.jdk15);
+      final
+      JavaModuleFixtureBuilder bld = host.addModule(JavaModuleFixtureBuilder.class);
+      bld.setMockJdkLevel(JavaModuleFixtureBuilder.MockJdkLevel.jdk15);
+      bld.addSourceContentRoot(testDataPath(path));
+      myModule = bld.getFixture();
+      myModule.setUp();
+      new WriteAction<Void>() {
+        @Override
+        protected void run(Result<Void> result) throws Throwable {
+          final ModifiableModuleModel model = ModuleManager.getInstance(project()).getModifiableModel();
+          try {
+            model.renameModule(module(), name);
+          } catch (ModuleWithNameAlreadyExists moduleWithNameAlreadyExists) {
+            model.dispose();
+            Assert.fail();
+            return;
+          }
+          model.commit();
+        }
+      }.execute();
     }
 
     @NotNull
@@ -79,31 +105,24 @@ public class AnalyzerTestCase extends TestCase {
 
     @NotNull
     public Module module() {
-      return myModule.getFixture().getModule();
+      return myModule.getModule();
     }
 
-    @NotNull
-    public ModuleBuilder name(@NotNull final String name) {
-      new WriteAction<Void>(){
+    public void lib(@NotNull final String name, @NotNull String... path) throws MalformedURLException {
+      final String url = "file://" + testDataPath(path).replace("\\","/") + "/";
+      new WriteAction() {
         @Override
-        protected void run(Result<Void> result) throws Throwable {
-          final ModifiableModuleModel model = ModuleManager.getInstance(project()).getModifiableModel();
-                    try {
-                      model.renameModule(module(), name);
-                    } catch (ModuleWithNameAlreadyExists moduleWithNameAlreadyExists) {
-                      model.dispose();
-                      Assert.fail();
-                      return;
-                    }
-                    model.commit();
+        protected void run(Result result) throws Throwable {
+          final Library lib = LibraryTablesRegistrar.getInstance().getLibraryTable(project()).createLibrary(name);
+          final Library.ModifiableModel model = lib.getModifiableModel();
+          model.addRoot(url, OrderRootType.CLASSES);
+          model.commit();
+
+          final ModifiableRootModel mod = ModuleRootManager.getInstance(module()).getModifiableModel();
+          mod.addLibraryEntry(lib).setScope(DependencyScope.COMPILE);
+          mod.commit();
         }
       }.execute();
-      return this;
-    }
-
-    public ModuleBuilder source(@NotNull String... path) throws IOException {
-      myModule.addSourceContentRoot(testDataPath(path));
-      return this;
     }
   }
 
@@ -116,10 +135,7 @@ public class AnalyzerTestCase extends TestCase {
 
     @NotNull
     public ModuleBuilder module(@NotNull String name, @NotNull String... path) throws Exception {
-      ModuleBuilder builder = new ModuleBuilder(myHost);
-      builder.name(name);
-      builder.source(path);
-      return builder;
+      return new ModuleBuilder(myHost, name, path);
     }
 
     public void dep(@NotNull ModuleBuilder from, @NotNull ModuleBuilder to) {
@@ -146,7 +162,7 @@ public class AnalyzerTestCase extends TestCase {
       try {
         testCode();
       } finally {
-        java.tearDown();
+//        java.tearDown();
       }
     }
 
