@@ -16,9 +16,7 @@
 
 package com.eugenePetrenko.idea.dependencies;
 
-import com.intellij.openapi.application.Application;
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.ModalityState;
+import com.intellij.openapi.application.*;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -75,11 +73,11 @@ public class ModuleDependenciesUpdater {
   }
 
   private static void runWriteAction(@NotNull final Runnable action) {
-    final Application app = ApplicationManager.getApplication();
-    app.invokeAndWait(new Runnable() {
-      public void run() {
-        app.runWriteAction(action);
+    new WriteAction() {
+      @Override
+      protected void run(Result result) throws Throwable {
+        action.run();
       }
-    }, ModalityState.any());
+    }.execute();
   }
 }
