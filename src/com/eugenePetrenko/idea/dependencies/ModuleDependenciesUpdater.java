@@ -16,9 +16,12 @@
 
 package com.eugenePetrenko.idea.dependencies;
 
+import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
+import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ModifiableRootModel;
 import com.intellij.openapi.roots.ModuleRootManager;
@@ -31,15 +34,23 @@ import org.jetbrains.annotations.NotNull;
  */
 public class ModuleDependenciesUpdater {
   public static void updateModuleDependencies(@NotNull final Project project,
-                                              @NotNull final RemoveModulesModel model) {
+                                              @NotNull final RemoveModulesModel model,
+                                              @NotNull final ProgressIndicator indicator) {
     //TODO: implement undo
-    ApplicationManager.getApplication().runWriteAction(new Runnable() {
-      public void run() {
+    final Module[] modules = ModuleManager.getInstance(project).getModules();
+    if (modules.length == 0) return;
 
-        boolean hasChangedModules = false;
-        for (Module module : ModuleManager.getInstance(project).getModules()) {
+    final double total = modules.length;
+    int current = 0;
+
+    for (final Module module : modules) {
+      indicator.setFraction(++current / total);
+      indicator.setText(module.getName());
+
+      runWriteAction(new Runnable() {
+        public void run() {
           final LibOrModuleSet toRemove = model.forModule(module);
-          if (toRemove == null || toRemove.isEmpty()) continue;
+          if (toRemove == null || toRemove.isEmpty()) return;
 
           final ModifiableRootModel model = ModuleRootManager.getInstance(module).getModifiableModel();
           try {
@@ -52,7 +63,6 @@ public class ModuleDependenciesUpdater {
             }
 
             if (containedChanges) {
-              hasChangedModules = true;
               model.commit();
             }
           } finally {
@@ -60,9 +70,16 @@ public class ModuleDependenciesUpdater {
             if (model.isWritable()) model.dispose();
           }
         }
+      });
+    }
+  }
 
-        if (hasChangedModules) project.save();
+  private static void runWriteAction(@NotNull final Runnable action) {
+    final Application app = ApplicationManager.getApplication();
+    app.invokeAndWait(new Runnable() {
+      public void run() {
+        app.runWriteAction(action);
       }
-    });
+    }, ModalityState.any());
   }
 }

@@ -16,11 +16,14 @@
 
 package com.eugenePetrenko.idea.dependencies.actions;
 
+import com.eugenePetrenko.idea.dependencies.ModuleDependenciesUpdater;
 import com.eugenePetrenko.idea.dependencies.RemoveModulesModel;
 import com.eugenePetrenko.idea.dependencies.ui.LibrariesSelectionDialog;
-import com.eugenePetrenko.idea.dependencies.ModuleDependenciesUpdater;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import org.jetbrains.annotations.NotNull;
@@ -50,9 +53,28 @@ public class PostAction {
 
         final RemoveModulesModel newModel = dialog.getModel();
         if (newModel.isEmpty()) return;
-        ModuleDependenciesUpdater.updateModuleDependencies(project, newModel);
 
-        Messages.showInfoMessage(project, "Unused dependencies were removed", "Jonnyzzz");
+        doRemoveDependencies(app, project, newModel);
+      }
+    });
+  }
+
+  private static void doRemoveDependencies(@NotNull final Application app,
+                                           @NotNull final Project project,
+                                           @NotNull final RemoveModulesModel newModel) {
+    ProgressManager.getInstance().run(new Task.Modal(project, "Removing Dependencies", false) {
+      public void run(@NotNull final ProgressIndicator indicator) {
+        ModuleDependenciesUpdater.updateModuleDependencies(project, newModel, indicator);
+
+        app.invokeLater(new Runnable() {
+          public void run() {
+            app.runWriteAction(new Runnable() {
+              public void run() {
+                project.save();
+              }
+            });
+          }
+        });
       }
     });
   }
