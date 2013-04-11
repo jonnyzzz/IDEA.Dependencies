@@ -1,5 +1,6 @@
 package com.eugenePetrenko.idea.depedencies;
 
+import com.eugenePetrenko.idea.dependencies.LibOrModuleSet;
 import com.eugenePetrenko.idea.dependencies.RemoveModulesModel;
 import com.intellij.openapi.roots.libraries.Library;
 import junit.framework.Assert;
@@ -60,6 +61,51 @@ public class AnalyzerTest extends AnalyzerTestCase {
 
         //transitive dependencies must not be removed
         Assert.assertTrue(result.isEmpty());
+      }
+    });
+  }
+
+  @TestFor(issues = "#4")
+  public void testUnusedLibraryIsRemoved() throws Throwable {
+    doTest(new AnalyzerTestAction() {
+      @Override
+      protected void testCode() throws Throwable {
+        final ModuleBuilder m1 = module("m1", "transitiveLibs", "a");
+
+        Library ia = lib("ia", "transitiveLibs", "lib", "a.i");
+        Library lc = lib("lc", "transitiveLibs", "lib", "c");
+
+        m1.lib(lc);
+        m1.lib(ia); //unused
+
+        RemoveModulesModel result = analyzeProject();
+        System.out.println("result = " + result);
+
+        LibOrModuleSet gold = new LibOrModuleSet();
+        gold.addDependency(ia);
+
+        Assert.assertEquals(gold, result.forModule(m1.module()));
+      }
+    });
+  }
+
+  @TestFor(issues = "#4")
+  public void testUnusedModuleIsRemoved() throws Throwable {
+    doTest(new AnalyzerTestAction() {
+      @Override
+      protected void testCode() throws Throwable {
+        final ModuleBuilder m1 = module("m1", "transitiveClasses","a");
+        final ModuleBuilder m2 = module("m2", "transitiveLibs", "b");
+
+        dep(m2, m1); //should not be here
+
+        RemoveModulesModel result = analyzeProject();
+        System.out.println("result = " + result);
+
+        LibOrModuleSet gold = new LibOrModuleSet();
+        gold.addDependency(m1.module());
+
+        Assert.assertEquals(gold, result.forModule(m2.module()));
       }
     });
   }
