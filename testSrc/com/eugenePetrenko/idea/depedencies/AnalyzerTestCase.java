@@ -108,21 +108,17 @@ public class AnalyzerTestCase extends TestCase {
       return myModule.getModule();
     }
 
-    public void lib(@NotNull final String name, @NotNull String... path) throws MalformedURLException {
-      final String url = "file://" + testDataPath(path).replace("\\","/") + "/";
-      new WriteAction() {
-        @Override
-        protected void run(Result result) throws Throwable {
-          final Library lib = LibraryTablesRegistrar.getInstance().getLibraryTable(project()).createLibrary(name);
-          final Library.ModifiableModel model = lib.getModifiableModel();
-          model.addRoot(url, OrderRootType.CLASSES);
-          model.commit();
-
-          final ModifiableRootModel mod = ModuleRootManager.getInstance(module()).getModifiableModel();
-          mod.addLibraryEntry(lib).setScope(DependencyScope.COMPILE);
-          mod.commit();
-        }
-      }.execute();
+    public void lib(@NotNull final Library... libs) throws MalformedURLException {
+      for (final Library lib : libs) {
+        new WriteAction() {
+          @Override
+          protected void run(Result result) throws Throwable {
+            final ModifiableRootModel mod = ModuleRootManager.getInstance(module()).getModifiableModel();
+            mod.addLibraryEntry(lib).setScope(DependencyScope.COMPILE);
+            mod.commit();
+          }
+        }.execute();
+      }
     }
   }
 
@@ -154,6 +150,21 @@ public class AnalyzerTestCase extends TestCase {
     @NotNull
     public Project project() {
       return myHost.getFixture().getProject();
+    }
+
+    @NotNull
+    public Library lib(@NotNull final String name, @NotNull String... path) throws MalformedURLException {
+      final String url = "file://" + testDataPath(path).replace("\\","/") + "/";
+      return new WriteAction<Library>() {
+        @Override
+        protected void run(Result<Library> result) throws Throwable {
+          final Library lib = LibraryTablesRegistrar.getInstance().getLibraryTable(project()).createLibrary(name);
+          final Library.ModifiableModel model = lib.getModifiableModel();
+          model.addRoot(url, OrderRootType.CLASSES);
+          model.commit();
+          result.setResult(lib);
+        }
+      }.execute().getResultObject();
     }
 
     public final void doTheTest() throws Throwable {

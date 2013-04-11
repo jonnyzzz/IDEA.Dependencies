@@ -31,14 +31,18 @@ import com.intellij.openapi.roots.*;
 import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
+import com.intellij.psi.util.InheritanceUtil;
 import com.intellij.util.Processor;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.intellij.psi.PsiReferenceService.Hints.NO_HINTS;
 
 /**
  * Created by Eugene Petrenko (eugene.petrenko@gmail.com)
@@ -177,23 +181,39 @@ public class ModuleDependenciesAnalyzer {
                       public void visitElement(final PsiElement element) {
                         super.visitElement(element);
 
-                        for (final PsiReference ref : element.getReferences()) {
-                          final PsiElement resolved = ref.resolve();
-                          if (resolved == null) continue;
-                          if (resolved.getProject().isDefault()) continue;
-                          if (!resolved.isValid()) continue;
-
-                          final PsiFile file = resolved.getContainingFile();
-                          if (file == null) continue;
-                          if (!file.isValid()) continue;
-
-                          final VirtualFile virtual = file.getVirtualFile();
-                          if (virtual == null) continue;
-                          if (!virtual.isValid()) continue;
-
-
-                          oes.addAll(projectIndex.getOrderEntriesForFile(virtual));
+                        for (final PsiReference ref : PsiReferenceService.getService().getReferences(element, NO_HINTS)) {
+                          processResolvedElement(ref.resolve());
                         }
+                      }
+
+                      private void processResolvedElement(@Nullable PsiElement resolved) {
+                        if (resolved == null) return;
+                        if (resolved.getProject().isDefault()) return;
+                        if (!resolved.isValid()) return;
+
+                        if (resolved instanceof PsiClass) {
+                          InheritanceUtil.processSupers((PsiClass)resolved, true, new Processor<PsiClass>() {
+                            public boolean process(@NotNull PsiClass psiClass) {
+                              registerUsage(psiClass);
+                              return true;
+                            }
+                          });
+                          return;
+                        }
+
+                        registerUsage(resolved);
+                      }
+
+                      private void registerUsage(@NotNull PsiElement resolved) {
+                        final PsiFile file = resolved.getContainingFile();
+                        if (file == null) return;
+                        if (!file.isValid()) return;
+
+                        final VirtualFile virtual = file.getVirtualFile();
+                        if (virtual == null) return;
+                        if (!virtual.isValid()) return;
+
+                        oes.addAll(projectIndex.getOrderEntriesForFile(virtual));
                       }
                     });
 

@@ -1,6 +1,7 @@
 package com.eugenePetrenko.idea.depedencies;
 
 import com.eugenePetrenko.idea.dependencies.RemoveModulesModel;
+import com.intellij.openapi.roots.libraries.Library;
 import junit.framework.Assert;
 
 /**
@@ -43,12 +44,16 @@ public class AnalyzerTest extends AnalyzerTestCase {
     doTest(new AnalyzerTestAction() {
       @Override
       protected void testCode() throws Throwable {
-        final ModuleBuilder m = module("m", "transitiveLibs", "a");
+        final ModuleBuilder m1 = module("m1", "transitiveLibs", "a");
+        final ModuleBuilder m2 = module("m2", "transitiveLibs", "b");
 
-        m.lib("ia", "transitiveLibs", "lib", "a.i");
-        m.lib("la", "transitiveLibs", "lib", "a");
-        m.lib("lb", "transitiveLibs", "lib", "b");
-        m.lib("lc", "transitiveLibs", "lib", "c");
+        Library ia = lib("ia", "transitiveLibs", "lib", "a.i");
+        Library la = lib("la", "transitiveLibs", "lib", "a");
+        Library lb = lib("lb", "transitiveLibs", "lib", "b");
+        Library lc = lib("lc", "transitiveLibs", "lib", "c");
+
+        m1.lib(lc);
+        m2.lib(ia, la, lb);
 
         RemoveModulesModel result = analyzeProject();
         System.out.println("result = " + result);
