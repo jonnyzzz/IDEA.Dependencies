@@ -32,11 +32,11 @@
   </project-components>
 
   <actions>
-    <group id="jonnyzzz.Actions" popup="true" text="DependenciesEx">
+    <group id="jonnyzzz.Actions" popup="true" text="Dependencies Remover">
       <add-to-group anchor="last" group-id="ToolsMenu"/>
 
-      <action class="com.eugenePetrenko.idea.dependencies.actions.OnProjectAction" text="Check global dependencies" id="jproject"/>
-      <action class="com.eugenePetrenko.idea.dependencies.actions.OnModuleAction" text="Check module dependencies" id="jmodule"/>
+      <action class="com.eugenePetrenko.idea.dependencies.actions.OnProjectAction" text="Check Global Dependencies" id="jproject"/>
+      <action class="com.eugenePetrenko.idea.dependencies.actions.OnModuleAction" text="Check Module Dependencies" id="jmodule"/>
     </group>
 
     <group>
