@@ -13,6 +13,12 @@
       <sourceFolder url="file://$MODULE_DIR$/transitiveLibs/lib.src/a.i" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/transitiveLibs/lib.src/b" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/transitiveLibs/lib.src/c" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/exportClasses/a" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/exportClasses/aExport" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/exportClasses/b" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/exportClasses/c" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/exportClasses/d" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/exportClasses/q" isTestSource="true" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

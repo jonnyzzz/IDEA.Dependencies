@@ -1,5 +1,6 @@
 package com.eugenePetrenko.idea.depedencies;
 
+import com.eugenePetrenko.idea.dependencies.LibOrModuleSet;
 import com.eugenePetrenko.idea.dependencies.ModuleDependenciesAnalyzer;
 import com.eugenePetrenko.idea.dependencies.RemoveModulesModel;
 import com.intellij.openapi.application.ApplicationManager;
@@ -108,6 +109,16 @@ public class AnalyzerTestCase extends TestCase {
       return myModule.getModule();
     }
 
+    @NotNull
+    public RemoveModulesModel analyzeModule(@NotNull ModuleBuilder builder) {
+      return ModuleDependenciesAnalyzer.processModuleDependencies(
+              new EmptyProgressIndicator(),
+              ApplicationManager.getApplication(),
+              project(),
+              builder.module()
+      );
+    }
+
     public void lib(@NotNull final Library... libs) throws MalformedURLException {
       for (final Library lib : libs) {
         new WriteAction() {
@@ -135,7 +146,11 @@ public class AnalyzerTestCase extends TestCase {
     }
 
     public void dep(@NotNull ModuleBuilder from, @NotNull ModuleBuilder to) {
-      ModuleRootModificationUtil.addDependency(from.module(), to.module());
+      dep(from, to, false);
+    }
+
+    public void dep(@NotNull ModuleBuilder from, @NotNull ModuleBuilder to, boolean export) {
+      ModuleRootModificationUtil.addDependency(from.module(), to.module(), DependencyScope.COMPILE, export);
     }
 
     @NotNull
@@ -175,6 +190,43 @@ public class AnalyzerTestCase extends TestCase {
       } finally {
 //        java.tearDown();
       }
+    }
+
+
+    public class ResultChecker {
+      private final RemoveModulesModel myExpected = new RemoveModulesModel();
+
+      @NotNull
+      public ResultChecker removes(@NotNull ModuleBuilder from, @NotNull ModuleBuilder to) {
+        getOrCreate(from).addDependency(to.module());
+        return this;
+      }
+
+      @NotNull
+      public ResultChecker removes(@NotNull ModuleBuilder from, @NotNull Library to) {
+        getOrCreate(from).addDependency(to);
+        return this;
+      }
+
+      @NotNull
+      private LibOrModuleSet getOrCreate(@NotNull final ModuleBuilder from) {
+        final Module fromModule = from.module();
+
+        LibOrModuleSet libOrModuleSet = myExpected.forModule(fromModule);
+        if (libOrModuleSet != null) return libOrModuleSet;
+        libOrModuleSet = new LibOrModuleSet();
+        myExpected.addRemoves(fromModule, libOrModuleSet);
+        return libOrModuleSet;
+      }
+
+      public void assertActual(@NotNull RemoveModulesModel actual) {
+        Assert.assertEquals(myExpected, actual);
+      }
+    }
+
+    @NotNull
+    public ResultChecker assertBuilder() {
+      return new ResultChecker();
     }
 
     protected abstract void testCode() throws Throwable;

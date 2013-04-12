@@ -21,7 +21,9 @@ import com.intellij.openapi.util.text.StringUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -32,7 +34,6 @@ public class RemoveModulesModel {
   private final Map<String, LibOrModuleSet> myModuleToRemove = new TreeMap<String, LibOrModuleSet>();
 
   public void addRemoves(@NotNull final Module module, @Nullable final LibOrModuleSet set) {
-    if (set == null || set.isEmpty()) return;
     myModuleToRemove.put(module.getName(), set);
   }
 
@@ -46,7 +47,11 @@ public class RemoveModulesModel {
   }
 
   public boolean isEmpty() {
-    return myModuleToRemove.isEmpty();
+    if (myModuleToRemove.isEmpty()) return true;
+    for (LibOrModuleSet val : myModuleToRemove.values()) {
+      if (!val.isEmpty()) return false;
+    }
+    return true;
   }
 
   @Override
@@ -54,6 +59,8 @@ public class RemoveModulesModel {
     final StringBuilder sb = new StringBuilder();
     sb.append("RemoveModulesModel{\n");
     for (Map.Entry<String, LibOrModuleSet> e : myModuleToRemove.entrySet()) {
+      if (e.getValue().isEmpty()) continue;
+
       sb.append("  ").append(e.getKey()).append(" =>\n");
       for (String line : e.getValue().toString().split("[\n\r]+")) {
         if (StringUtil.isEmptyOrSpaces(line)) continue;
@@ -62,5 +69,32 @@ public class RemoveModulesModel {
     }
     sb.append('}');
     return sb.toString();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+
+    final RemoveModulesModel that = (RemoveModulesModel) o;
+
+    final Set<String> allKeys = new HashSet<String>();
+    allKeys.addAll(this.myModuleToRemove.keySet());
+    allKeys.addAll(that.myModuleToRemove.keySet());
+
+    for (String key : allKeys) {
+      final LibOrModuleSet thisSet = this.myModuleToRemove.get(key);
+      final LibOrModuleSet thatSet = that.myModuleToRemove.get(key);
+
+      if ((thisSet == null || thisSet.isEmpty()) && (thatSet == null || thatSet.isEmpty())) continue;
+      if (thisSet == null || thatSet == null) return false;
+      if (!thisSet.equals(thatSet)) return false;
+    }
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    return myModuleToRemove.hashCode();
   }
 }

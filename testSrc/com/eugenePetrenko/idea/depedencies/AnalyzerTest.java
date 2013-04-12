@@ -1,9 +1,7 @@
 package com.eugenePetrenko.idea.depedencies;
 
-import com.eugenePetrenko.idea.dependencies.LibOrModuleSet;
 import com.eugenePetrenko.idea.dependencies.RemoveModulesModel;
 import com.intellij.openapi.roots.libraries.Library;
-import junit.framework.Assert;
 
 /**
  * Created by Eugene Petrenko (eugene.petrenko@gmail.com)
@@ -35,7 +33,7 @@ public class AnalyzerTest extends AnalyzerTestCase {
         System.out.println("result = " + result);
 
         //transitive dependencies must not be removed
-        Assert.assertTrue(result.isEmpty());
+        assertBuilder().assertActual(result);
       }
     });
   }
@@ -60,7 +58,7 @@ public class AnalyzerTest extends AnalyzerTestCase {
         System.out.println("result = " + result);
 
         //transitive dependencies must not be removed
-        Assert.assertTrue(result.isEmpty());
+        assertBuilder().assertActual(result);
       }
     });
   }
@@ -81,10 +79,7 @@ public class AnalyzerTest extends AnalyzerTestCase {
         RemoveModulesModel result = analyzeProject();
         System.out.println("result = " + result);
 
-        LibOrModuleSet gold = new LibOrModuleSet();
-        gold.addDependency(ia);
-
-        Assert.assertEquals(gold, result.forModule(m1.module()));
+        assertBuilder().removes(m1, ia).assertActual(result);
       }
     });
   }
@@ -102,10 +97,37 @@ public class AnalyzerTest extends AnalyzerTestCase {
         RemoveModulesModel result = analyzeProject();
         System.out.println("result = " + result);
 
-        LibOrModuleSet gold = new LibOrModuleSet();
-        gold.addDependency(m1.module());
+        assertBuilder().removes(m2, m1).assertActual(result);
+      }
+    });
+  }
 
-        Assert.assertEquals(gold, result.forModule(m2.module()));
+  @TestFor(issues = "#1")
+  public void testExportDependency() throws Throwable {
+    doTest(new AnalyzerTestAction() {
+      @Override
+      protected void testCode() throws Throwable {
+        final ModuleBuilder mE = module("mE", "exportClasses", "aExport");
+        final ModuleBuilder mR = module("mR", "exportClasses", "a");
+        final ModuleBuilder mB = module("mB", "exportClasses", "b");
+        final ModuleBuilder mC = module("mC", "exportClasses", "c");
+        final ModuleBuilder mD = module("mD", "exportClasses", "d");
+        final ModuleBuilder mQ = module("mQ", "exportClasses", "q");
+
+        dep(mR, mE, true); //this is exported dependency with no actual use inside
+
+        dep(mB, mR); //uses both mR and mE
+        dep(mC, mR); //uses only mR
+        dep(mD, mR); //uses only mE
+        dep(mQ, mR); //uses none
+
+
+        RemoveModulesModel result = analyzeProject();
+        System.out.println("result = " + result);
+
+        assertBuilder()
+                .removes(mQ, mR)
+                .assertActual(result);
       }
     });
   }
