@@ -110,12 +110,12 @@ public class AnalyzerTestCase extends TestCase {
     }
 
     @NotNull
-    public RemoveModulesModel analyzeModule(@NotNull ModuleBuilder builder) {
+    public RemoveModulesModel analyzeModule() {
       return ModuleDependenciesAnalyzer.processModuleDependencies(
               new EmptyProgressIndicator(),
               ApplicationManager.getApplication(),
               project(),
-              builder.module()
+              module()
       );
     }
 
