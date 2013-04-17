@@ -67,7 +67,6 @@ public class ModuleDependenciesAnalyzer {
                                                                @NotNull Module[] modules,
                                                                @NotNull Project project) {
     final ModulesDependencies moduleUsages = ModuleDependenciesSearcher.collectionActualModulesDependencies(indicator, app, project, modules);
-
     final ModulesDependencies moduleRemovables = new ModulesDependencies();
 
     for (final Module module : modules) {
@@ -76,7 +75,7 @@ public class ModuleDependenciesAnalyzer {
       app.runReadAction(new Runnable() {
         public void run() {
           for (OrderEntry e : ModuleRootManager.getInstance(module).getOrderEntries()) {
-            if (DependenciesFilter.REMOVABLE_DEPENDENCY.apply(e) && !actualUsages.contains(e)) {
+            if (!actualUsages.contains(e)) {
               toRemove.addDependency(e);
             }
           }

@@ -30,7 +30,7 @@ import java.net.MalformedURLException;
  * Created by Eugene Petrenko (eugene.petrenko@gmail.com)
  * Date: 10.04.13 9:51
  */
-public class AnalyzerTestCase extends TestCase {
+public abstract class AnalyzerTestCase extends TestCase {
   private final Lazy<File, IOException> myTestDataPath = new Lazy<File, IOException>() {
     @NotNull
     @Override

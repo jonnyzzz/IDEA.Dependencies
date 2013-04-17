@@ -65,6 +65,7 @@ public class LibOrModuleSet {
   }
 
   public void addDependency(@NotNull OrderEntry e) {
+    if (!DependenciesFilter.REMOVABLE_DEPENDENCY.apply(e)) return;
     e.accept(ADD, null);
   }
 
