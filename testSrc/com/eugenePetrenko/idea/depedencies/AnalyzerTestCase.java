@@ -200,13 +200,7 @@ public abstract class AnalyzerTestCase extends TestCase {
 
       @NotNull
       private LibOrModuleSet getOrCreate(@NotNull final ModuleBuilder from) {
-        final Module fromModule = from.module();
-
-        LibOrModuleSet libOrModuleSet = myExpected.forModule(fromModule);
-        if (libOrModuleSet != null) return libOrModuleSet;
-        libOrModuleSet = new LibOrModuleSet();
-        myExpected.addRemoves(fromModule, libOrModuleSet);
-        return libOrModuleSet;
+        return myExpected.forModule(from.module());
       }
 
       public void assertActual(@NotNull ModulesDependencies actual) {

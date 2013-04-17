@@ -16,7 +16,6 @@
 
 package com.eugenePetrenko.idea.dependencies.ui;
 
-import com.eugenePetrenko.idea.dependencies.DependenciesFilter;
 import com.eugenePetrenko.idea.dependencies.LibOrModuleSet;
 import com.eugenePetrenko.idea.dependencies.ModulesDependencies;
 import com.intellij.ide.DataManager;
@@ -46,7 +45,10 @@ import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 import java.awt.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Vector;
 
 import static com.intellij.ui.SimpleTextAttributes.*;
 
@@ -60,18 +62,15 @@ public class LibrariesSelectionDialog extends DialogWrapper {
   private static final DataKey<Collection<DependencyNodeBase>> DEPENDENCY_NODE_ARRAY = DataKey.create("jdependency_nodes");
 
   @NotNull
-  private final Project myProject;
-  @NotNull
   private final ModulesDependencies myModel;
   @NotNull
   private final Tree myTree;
 
   public LibrariesSelectionDialog(@NotNull Project project, @NotNull final ModulesDependencies model) {
     super(project, true);
-    myProject = project;
     myModel = model;
 
-    myTree = new Tree(new RootNode(myProject, myModel));
+    myTree = new Tree(new RootNode(project, myModel));
     myTree.setRootVisible(false);
     myTree.setCellRenderer(new CellRenderer());
     init();
@@ -161,22 +160,19 @@ public class LibrariesSelectionDialog extends DialogWrapper {
 
   private class RootNode extends DefaultMutableTreeNode {
     @NotNull
-    private final Project myProject;
-    @NotNull
     private final ModulesDependencies myModel;
 
     private RootNode(@NotNull final Project project, @NotNull final ModulesDependencies model) {
-      myProject = project;
       myModel = model;
-      children = new Vector();
-      Module[] modules = ModuleManager.getInstance(project).getSortedModules();
+      final Vector<ModuleNode> children = new Vector<ModuleNode>();
+      final Module[] modules = ModuleManager.getInstance(project).getSortedModules();
       Arrays.sort(modules, Comparators.MODULE_COMPARATOR);
       for (Module module : modules) {
         final LibOrModuleSet filter = myModel.forModule(module);
-        if (filter == null || filter.isEmpty()) continue;
-        //noinspection unchecked
+        if (filter.isEmpty()) continue;
         children.add(new ModuleNode(module, filter));
       }
+      this.children = children;
     }
   }
 
@@ -199,28 +195,25 @@ public class LibrariesSelectionDialog extends DialogWrapper {
       ModuleRootManager.getInstance(module).processOrder(new RootPolicy<Void>() {
         @Override
         public Void visitModuleOrderEntry(@NotNull ModuleOrderEntry moduleOrderEntry, Void value) {
-          if (!DependenciesFilter.REMOVABLE_DEPENDENCY.apply(moduleOrderEntry)) return null;
-
           final Module mod = moduleOrderEntry.getModule();
           if (mod == null) return null;
           addNode(new DependencyModuleNode(libOrModuleSet, mod));
           return null;
         }
 
-        private void addNode(@NotNull DependencyNodeBase e) {
-          if (e.intersects(libOrModuleSet)) {
-            myChildren.add(e);
-          }
-        }
-
         @Override
         public Void visitLibraryOrderEntry(@NotNull LibraryOrderEntry libraryOrderEntry, Void value) {
-          if (!DependenciesFilter.REMOVABLE_DEPENDENCY.apply(libraryOrderEntry)) return null;
-          Library lib = libraryOrderEntry.getLibrary();
+          final Library lib = libraryOrderEntry.getLibrary();
           if (lib == null) return null;
           addNode(new DependencyLibNode(libOrModuleSet, lib));
 
           return null;
+        }
+
+        private void addNode(@NotNull DependencyNodeBase e) {
+          if (e.intersects()) {
+            myChildren.add(e);
+          }
         }
       }, null);
       children = new Vector<DependencyNodeBase>(myChildren);
@@ -253,7 +246,7 @@ public class LibrariesSelectionDialog extends DialogWrapper {
       myIsRemoved = isRemoved;
     }
 
-    public abstract boolean intersects(@NotNull LibOrModuleSet set);
+    public abstract boolean intersects();
   }
 
   private class DependencyModuleNode extends DependencyNodeBase implements ModuleHoldingNode {
@@ -280,8 +273,8 @@ public class LibrariesSelectionDialog extends DialogWrapper {
     }
 
     @Override
-    public boolean intersects(@NotNull LibOrModuleSet set) {
-      return set.contains(getModule());
+    public boolean intersects() {
+      return myFilter.contains(getModule());
     }
   }
 
@@ -299,8 +292,8 @@ public class LibrariesSelectionDialog extends DialogWrapper {
     }
 
     @Override
-    public boolean intersects(@NotNull LibOrModuleSet set) {
-      return set.contains(getLibrary());
+    public boolean intersects() {
+      return myFilter.contains(getLibrary());
     }
 
     @Override
