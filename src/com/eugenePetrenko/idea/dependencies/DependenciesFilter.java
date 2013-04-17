@@ -28,7 +28,7 @@ import org.jetbrains.annotations.Nullable;
 public class DependenciesFilter {
   public static final Predicate<OrderEntry> REMOVABLE_DEPENDENCY = new Predicate<OrderEntry>() {
     public boolean apply(@Nullable OrderEntry input) {
-      return input != null && input.accept(new RootPolicy<Boolean>(){
+      return input != null && input.accept(new RootPolicy<Boolean>() {
         @Override
         public Boolean visitModuleOrderEntry(ModuleOrderEntry moduleOrderEntry, Boolean value) {
           return true;

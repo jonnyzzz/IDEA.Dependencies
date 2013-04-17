@@ -57,9 +57,9 @@ public class ModuleDependenciesSearcher {
    */
   @NotNull
   public static LibOrModuleSet processModuleDependencies(@NotNull final ProgressIndicator indicator,
-                                                             @NotNull final Application app,
-                                                             @NotNull final Project project,
-                                                             @NotNull final Module module) {
+                                                         @NotNull final Application app,
+                                                         @NotNull final Project project,
+                                                         @NotNull final Module module) {
     final LibOrModuleSet dependencies = new LibOrModuleSet();
 
     final PsiManager psiManager = PsiManager.getInstance(project);

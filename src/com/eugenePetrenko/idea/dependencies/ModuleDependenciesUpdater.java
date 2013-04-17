@@ -16,7 +16,8 @@
 
 package com.eugenePetrenko.idea.dependencies;
 
-import com.intellij.openapi.application.*;
+import com.intellij.openapi.application.Result;
+import com.intellij.openapi.application.WriteAction;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.progress.ProgressIndicator;

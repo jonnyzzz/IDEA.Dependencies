@@ -42,8 +42,8 @@ public class ModuleDependenciesAnalyzer {
    */
   @NotNull
   public static ModulesDependencies processAllDependencies(@NotNull final ProgressIndicator indicator,
-                                                          @NotNull final Application app,
-                                                          @NotNull final Project project) {
+                                                           @NotNull final Application app,
+                                                           @NotNull final Project project) {
     final Module[] modules = app.runReadAction(new Computable<Module[]>() {
       public Module[] compute() {
         return ModuleManager.getInstance(project).getSortedModules();
@@ -59,14 +59,14 @@ public class ModuleDependenciesAnalyzer {
    * @param indicator progress
    * @param app       application
    * @param project   project
-   * @param modules    modules
+   * @param modules   modules
    * @return set of module dependencies that could be removed
    */
   @NotNull
   public static ModulesDependencies processModulesDependencies(@NotNull final ProgressIndicator indicator,
-                                                              @NotNull Application app,
-                                                              @NotNull Module[] modules,
-                                                              @NotNull Project project) {
+                                                               @NotNull Application app,
+                                                               @NotNull Module[] modules,
+                                                               @NotNull Project project) {
     final ModulesDependencies result = new ModulesDependencies();
     final double length = (double) modules.length;
     final double outerStep = 1.0 / length;
@@ -110,9 +110,9 @@ public class ModuleDependenciesAnalyzer {
    */
   @NotNull
   public static ModulesDependencies processModuleDependencies(@NotNull final ProgressIndicator indicator,
-                                                             @NotNull final Application app,
-                                                             @NotNull final Project project,
-                                                             @NotNull final Module module) {
+                                                              @NotNull final Application app,
+                                                              @NotNull final Project project,
+                                                              @NotNull final Module module) {
     final LibOrModuleSet actualUsages = ModuleDependenciesSearcher.processModuleDependencies(indicator, app, project, module);
 
     final LibOrModuleSet toRemove = new LibOrModuleSet();
