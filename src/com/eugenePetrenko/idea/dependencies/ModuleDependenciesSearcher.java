@@ -18,6 +18,7 @@ package com.eugenePetrenko.idea.dependencies;
 
 import com.intellij.codeInsight.daemon.ProblemHighlightFilter;
 import com.intellij.concurrency.JobLauncher;
+import com.intellij.ide.util.DelegatingProgressIndicator;
 import com.intellij.lang.injection.InjectedLanguageManager;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.module.Module;
@@ -56,10 +57,10 @@ public class ModuleDependenciesSearcher {
    * @return set of module dependencies that could be removed
    */
   @NotNull
-  public static LibOrModuleSet processModuleDependencies(@NotNull final ProgressIndicator indicator,
-                                                         @NotNull final Application app,
-                                                         @NotNull final Project project,
-                                                         @NotNull final Module module) {
+  public static LibOrModuleSet collectionActualModuleDependencies(@NotNull final ProgressIndicator indicator,
+                                                                  @NotNull final Application app,
+                                                                  @NotNull final Project project,
+                                                                  @NotNull final Module module) {
     final LibOrModuleSet dependencies = new LibOrModuleSet();
 
     final PsiManager psiManager = PsiManager.getInstance(project);
@@ -162,4 +163,48 @@ public class ModuleDependenciesSearcher {
 
     return dependencies;
   }
+
+  /**
+     * Performs references analysis for given module
+     *
+     * @param indicator progress
+     * @param app       application
+     * @param project   project
+     * @param modules   modules
+     * @return set of module dependencies that could be removed
+     */
+    @NotNull
+    public static ModulesDependencies collectionActualModulesDependencies(@NotNull final ProgressIndicator indicator,
+                                                                          @NotNull final Application app,
+                                                                          @NotNull final Project project,
+                                                                          @NotNull final Module[] modules) {
+      final ModulesDependencies result = new ModulesDependencies();
+      final double length = (double) modules.length;
+      final double outerStep = 1.0 / length;
+
+      for (int i = 0; i < modules.length; i++) {
+        final Module module = modules[i];
+
+        indicator.setIndeterminate(false);
+        indicator.checkCanceled();
+        indicator.setText(module.getName());
+
+        final double outerFraction = (double) i / length;
+        indicator.setFraction(outerFraction);
+
+        DelegatingProgressIndicator subProgress = new DelegatingProgressIndicator(indicator) {
+          @Override
+          public double getFraction() {
+            return (super.getFraction() - outerFraction) / outerStep;
+          }
+
+          @Override
+          public void setFraction(double fraction) {
+            super.setFraction(outerFraction + fraction * outerStep);
+          }
+        };
+        result.addAllRemoves(module, collectionActualModuleDependencies(subProgress, app, project, module));
+      }
+      return result;
+    }
 }

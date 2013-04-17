@@ -59,6 +59,11 @@ public class LibOrModuleSet {
     }
   }
 
+  public void addDependencies(@NotNull LibOrModuleSet deps) {
+    myLibs.addAll(deps.myLibs);
+    myModules.addAll(deps.myModules);
+  }
+
   public void addDependency(@NotNull OrderEntry e) {
     e.accept(ADD, null);
   }

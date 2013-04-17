@@ -37,13 +37,33 @@ public class ModulesDependencies {
     myModuleToRemove.put(module.getName(), set);
   }
 
-  public void addAllRemoves(@NotNull ModulesDependencies model) {
-    myModuleToRemove.putAll(model.myModuleToRemove);
+  public void addAllRemoves(@NotNull final Module fromModule, @NotNull LibOrModuleSet dependencies) {
+    addAllRemoves(fromModule.getName(), dependencies);
   }
 
-  @Nullable
+  private void addAllRemoves(@NotNull final String fromModule, @NotNull LibOrModuleSet dependencies) {
+    final LibOrModuleSet d = myModuleToRemove.get(fromModule);
+    if (d == null) {
+      myModuleToRemove.put(fromModule, dependencies);
+    } else {
+      d.addDependencies(dependencies);
+    }
+  }
+
+  public void addAllRemoves(@NotNull ModulesDependencies model) {
+    for (Map.Entry<String, LibOrModuleSet> e : model.myModuleToRemove.entrySet()) {
+      addAllRemoves(e.getKey(), e.getValue());
+    }
+  }
+
+  @NotNull
   public LibOrModuleSet forModule(@NotNull Module module) {
-    return myModuleToRemove.get(module.getName());
+    LibOrModuleSet set = myModuleToRemove.get(module.getName());
+    if (set == null) {
+      set = new LibOrModuleSet();
+      myModuleToRemove.put(module.getName(), set);
+    }
+    return set;
   }
 
   public boolean isEmpty() {

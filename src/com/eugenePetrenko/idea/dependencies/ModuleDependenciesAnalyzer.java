@@ -16,7 +16,6 @@
 
 package com.eugenePetrenko.idea.dependencies;
 
-import com.intellij.ide.util.DelegatingProgressIndicator;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
@@ -67,67 +66,25 @@ public class ModuleDependenciesAnalyzer {
                                                                @NotNull Application app,
                                                                @NotNull Module[] modules,
                                                                @NotNull Project project) {
-    final ModulesDependencies result = new ModulesDependencies();
-    final double length = (double) modules.length;
-    final double outerStep = 1.0 / length;
+    final ModulesDependencies moduleUsages = ModuleDependenciesSearcher.collectionActualModulesDependencies(indicator, app, project, modules);
 
-    for (int i = 0; i < modules.length; i++) {
-      final Module module = modules[i];
+    final ModulesDependencies moduleRemovables = new ModulesDependencies();
 
-      indicator.setIndeterminate(false);
-      indicator.checkCanceled();
-      indicator.setText(module.getName());
-
-      final double outerFraction = (double) i / length;
-      indicator.setFraction(outerFraction);
-
-      DelegatingProgressIndicator subProgress = new DelegatingProgressIndicator(indicator) {
-        @Override
-        public double getFraction() {
-          return (super.getFraction() - outerFraction) / outerStep;
-        }
-
-        @Override
-        public void setFraction(double fraction) {
-          super.setFraction(outerFraction + fraction * outerStep);
-        }
-      };
-      result.addAllRemoves(processModuleDependencies(subProgress, app, project, module));
-    }
-
-    return result;
-  }
-
-
-  /**
-   * Performs references analysis for given module
-   *
-   * @param indicator progress
-   * @param app       application
-   * @param project   project
-   * @param module    module
-   * @return set of module dependencies that could be removed
-   */
-  @NotNull
-  public static ModulesDependencies processModuleDependencies(@NotNull final ProgressIndicator indicator,
-                                                              @NotNull final Application app,
-                                                              @NotNull final Project project,
-                                                              @NotNull final Module module) {
-    final LibOrModuleSet actualUsages = ModuleDependenciesSearcher.processModuleDependencies(indicator, app, project, module);
-
-    final LibOrModuleSet toRemove = new LibOrModuleSet();
-    app.runReadAction(new Runnable() {
-      public void run() {
-        for (OrderEntry e : ModuleRootManager.getInstance(module).getOrderEntries()) {
-          if (DependenciesFilter.REMOVABLE_DEPENDENCY.apply(e) && !actualUsages.contains(e)) {
-            toRemove.addDependency(e);
+    for (final Module module : modules) {
+      final LibOrModuleSet toRemove = new LibOrModuleSet();
+      final LibOrModuleSet actualUsages = moduleUsages.forModule(module);
+      app.runReadAction(new Runnable() {
+        public void run() {
+          for (OrderEntry e : ModuleRootManager.getInstance(module).getOrderEntries()) {
+            if (DependenciesFilter.REMOVABLE_DEPENDENCY.apply(e) && !actualUsages.contains(e)) {
+              toRemove.addDependency(e);
+            }
           }
         }
-      }
-    });
+      });
+      moduleRemovables.addAllRemoves(module, toRemove);
+    }
 
-    final ModulesDependencies removeModulesModel = new ModulesDependencies();
-    removeModulesModel.addRemoves(module, toRemove);
-    return removeModulesModel;
+    return moduleRemovables;
   }
 }

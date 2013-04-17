@@ -109,16 +109,6 @@ public class AnalyzerTestCase extends TestCase {
       return myModule.getModule();
     }
 
-    @NotNull
-    public ModulesDependencies analyzeModule() {
-      return ModuleDependenciesAnalyzer.processModuleDependencies(
-              new EmptyProgressIndicator(),
-              ApplicationManager.getApplication(),
-              project(),
-              module()
-      );
-    }
-
     public void lib(@NotNull final Library... libs) throws MalformedURLException {
       for (final Library lib : libs) {
         new WriteAction() {
