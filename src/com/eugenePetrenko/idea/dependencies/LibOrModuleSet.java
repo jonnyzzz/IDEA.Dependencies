@@ -183,4 +183,21 @@ public class LibOrModuleSet {
     result = 31 * result + myLibs.hashCode();
     return result;
   }
+
+  @NotNull
+  public LibOrModuleSet intersect(@NotNull LibOrModuleSet b) {
+    return intersect(this, b);
+  }
+
+  @NotNull
+  public static LibOrModuleSet intersect(@NotNull LibOrModuleSet a, @NotNull LibOrModuleSet b) {
+    final LibOrModuleSet result = new LibOrModuleSet();
+    result.myLibs.addAll(a.myLibs);
+    result.myLibs.retainAll(b.myLibs);
+
+    result.myModules.addAll(a.myModules);
+    result.myModules.retainAll(b.myModules);
+
+    return result;
+  }
 }

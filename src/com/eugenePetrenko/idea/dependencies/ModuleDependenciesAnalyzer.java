@@ -66,10 +66,18 @@ public class ModuleDependenciesAnalyzer {
                                                                @NotNull Application app,
                                                                @NotNull Module[] modules,
                                                                @NotNull Project project) {
-    final ModulesDependencies moduleUsages = ModuleDependenciesSearcher.collectionActualModulesDependencies(indicator, app, project, modules);
+    //take export dependencies closure
+    //TODO: could be an option here to consider or not Exported deps
+    final Module[] allModules = ModuleDependenciesHelper.includeExportDependencies(project, modules);
+
+    final ModulesDependencies moduleUsages = ModuleDependenciesSearcher.collectionActualModulesDependencies(indicator, app, project, allModules);
+
+    //update export dependency usages
+    ModuleDependenciesHelper.updateExportedDependenciesUsages(project, allModules, moduleUsages);
+
     final ModulesDependencies moduleRemovables = new ModulesDependencies();
 
-    for (final Module module : modules) {
+    for (final Module module : allModules) {
       final LibOrModuleSet toRemove = new LibOrModuleSet();
       final LibOrModuleSet actualUsages = moduleUsages.forModule(module);
       app.runReadAction(new Runnable() {
