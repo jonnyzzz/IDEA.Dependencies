@@ -30,14 +30,14 @@ import java.util.TreeMap;
  * Created by Eugene Petrenko (eugene.petrenko@gmail.com)
  * Date: 07.04.13 20:33
  */
-public class RemoveModulesModel {
+public class ModulesDependencies {
   private final Map<String, LibOrModuleSet> myModuleToRemove = new TreeMap<String, LibOrModuleSet>();
 
   public void addRemoves(@NotNull final Module module, @Nullable final LibOrModuleSet set) {
     myModuleToRemove.put(module.getName(), set);
   }
 
-  public void addAllRemoves(@NotNull RemoveModulesModel model) {
+  public void addAllRemoves(@NotNull ModulesDependencies model) {
     myModuleToRemove.putAll(model.myModuleToRemove);
   }
 
@@ -76,7 +76,7 @@ public class RemoveModulesModel {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
-    final RemoveModulesModel that = (RemoveModulesModel) o;
+    final ModulesDependencies that = (ModulesDependencies) o;
 
     final Set<String> allKeys = new HashSet<String>();
     allKeys.addAll(this.myModuleToRemove.keySet());

@@ -17,7 +17,7 @@
 package com.eugenePetrenko.idea.dependencies.actions;
 
 import com.eugenePetrenko.idea.dependencies.ModuleDependenciesAnalyzer;
-import com.eugenePetrenko.idea.dependencies.RemoveModulesModel;
+import com.eugenePetrenko.idea.dependencies.ModulesDependencies;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
@@ -52,7 +52,7 @@ public class OnProjectAction extends AnAction {
 
     ProgressManager.getInstance().run(new Task.Backgroundable(project, "Dependencies of All modules", true, BackgroundFromStartOption.getInstance()) {
       public void run(@NotNull final ProgressIndicator indicator) {
-        final RemoveModulesModel result = ModuleDependenciesAnalyzer.processAllDependencies(indicator, ApplicationManager.getApplication(), project);
+        final ModulesDependencies result = ModuleDependenciesAnalyzer.processAllDependencies(indicator, ApplicationManager.getApplication(), project);
         PostAction.completeProcess(project, result);
       }
     });

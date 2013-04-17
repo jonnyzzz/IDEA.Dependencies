@@ -58,7 +58,7 @@ public class ModuleDependenciesAnalyzer {
    * @return set of module dependencies that could be removed
    */
   @NotNull
-  public static RemoveModulesModel processAllDependencies(@NotNull final ProgressIndicator indicator,
+  public static ModulesDependencies processAllDependencies(@NotNull final ProgressIndicator indicator,
                                                           @NotNull final Application app,
                                                           @NotNull final Project project) {
     final Module[] modules = app.runReadAction(new Computable<Module[]>() {
@@ -80,11 +80,11 @@ public class ModuleDependenciesAnalyzer {
    * @return set of module dependencies that could be removed
    */
   @NotNull
-  public static RemoveModulesModel processModulesDependencies(@NotNull final ProgressIndicator indicator,
+  public static ModulesDependencies processModulesDependencies(@NotNull final ProgressIndicator indicator,
                                                               @NotNull Application app,
                                                               @NotNull Module[] modules,
                                                               @NotNull Project project) {
-    final RemoveModulesModel result = new RemoveModulesModel();
+    final ModulesDependencies result = new ModulesDependencies();
     final double length = (double) modules.length;
     final double outerStep = 1.0 / length;
 
@@ -126,7 +126,7 @@ public class ModuleDependenciesAnalyzer {
    * @return set of module dependencies that could be removed
    */
   @NotNull
-  public static RemoveModulesModel processModuleDependencies(@NotNull final ProgressIndicator indicator,
+  public static ModulesDependencies processModuleDependencies(@NotNull final ProgressIndicator indicator,
                                                              @NotNull final Application app,
                                                              @NotNull final Project project,
                                                              @NotNull final Module module) {
@@ -241,7 +241,7 @@ public class ModuleDependenciesAnalyzer {
       }
     });
 
-    final RemoveModulesModel removeModulesModel = new RemoveModulesModel();
+    final ModulesDependencies removeModulesModel = new ModulesDependencies();
     removeModulesModel.addRemoves(module, toRemove);
     return removeModulesModel;
   }

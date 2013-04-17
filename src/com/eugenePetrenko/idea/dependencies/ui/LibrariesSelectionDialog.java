@@ -18,7 +18,7 @@ package com.eugenePetrenko.idea.dependencies.ui;
 
 import com.eugenePetrenko.idea.dependencies.DependenciesFilter;
 import com.eugenePetrenko.idea.dependencies.LibOrModuleSet;
-import com.eugenePetrenko.idea.dependencies.RemoveModulesModel;
+import com.eugenePetrenko.idea.dependencies.ModulesDependencies;
 import com.intellij.ide.DataManager;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.module.Module;
@@ -62,11 +62,11 @@ public class LibrariesSelectionDialog extends DialogWrapper {
   @NotNull
   private final Project myProject;
   @NotNull
-  private final RemoveModulesModel myModel;
+  private final ModulesDependencies myModel;
   @NotNull
   private final Tree myTree;
 
-  public LibrariesSelectionDialog(@NotNull Project project, @NotNull final RemoveModulesModel model) {
+  public LibrariesSelectionDialog(@NotNull Project project, @NotNull final ModulesDependencies model) {
     super(project, true);
     myProject = project;
     myModel = model;
@@ -84,7 +84,7 @@ public class LibrariesSelectionDialog extends DialogWrapper {
   }
 
   @NotNull
-  public RemoveModulesModel getModel() {
+  public ModulesDependencies getModel() {
     return myModel;
   }
 
@@ -163,9 +163,9 @@ public class LibrariesSelectionDialog extends DialogWrapper {
     @NotNull
     private final Project myProject;
     @NotNull
-    private final RemoveModulesModel myModel;
+    private final ModulesDependencies myModel;
 
-    private RootNode(@NotNull final Project project, @NotNull final RemoveModulesModel model) {
+    private RootNode(@NotNull final Project project, @NotNull final ModulesDependencies model) {
       myProject = project;
       myModel = model;
       children = new Vector();

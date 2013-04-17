@@ -17,7 +17,7 @@
 package com.eugenePetrenko.idea.dependencies.actions;
 
 import com.eugenePetrenko.idea.dependencies.ModuleDependenciesAnalyzer;
-import com.eugenePetrenko.idea.dependencies.RemoveModulesModel;
+import com.eugenePetrenko.idea.dependencies.ModulesDependencies;
 import com.eugenePetrenko.idea.dependencies.ui.Comparators;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -77,7 +77,7 @@ public class OnModuleAction extends AnAction {
                     BackgroundFromStartOption.getInstance()) {
 
       public void run(@NotNull final ProgressIndicator indicator) {
-        final RemoveModulesModel toRemove = ModuleDependenciesAnalyzer.processModulesDependencies(indicator, ApplicationManager.getApplication(), modules, myProject);
+        final ModulesDependencies toRemove = ModuleDependenciesAnalyzer.processModulesDependencies(indicator, ApplicationManager.getApplication(), modules, myProject);
         PostAction.completeProcess(project, toRemove);
       }
     });

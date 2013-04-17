@@ -2,7 +2,7 @@ package com.eugenePetrenko.idea.depedencies;
 
 import com.eugenePetrenko.idea.dependencies.LibOrModuleSet;
 import com.eugenePetrenko.idea.dependencies.ModuleDependenciesAnalyzer;
-import com.eugenePetrenko.idea.dependencies.RemoveModulesModel;
+import com.eugenePetrenko.idea.dependencies.ModulesDependencies;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.application.Result;
@@ -110,7 +110,7 @@ public class AnalyzerTestCase extends TestCase {
     }
 
     @NotNull
-    public RemoveModulesModel analyzeModule() {
+    public ModulesDependencies analyzeModule() {
       return ModuleDependenciesAnalyzer.processModuleDependencies(
               new EmptyProgressIndicator(),
               ApplicationManager.getApplication(),
@@ -154,7 +154,7 @@ public class AnalyzerTestCase extends TestCase {
     }
 
     @NotNull
-    public RemoveModulesModel analyzeProject() {
+    public ModulesDependencies analyzeProject() {
       return ModuleDependenciesAnalyzer.processAllDependencies(
               new EmptyProgressIndicator(),
               ApplicationManager.getApplication(),
@@ -194,7 +194,7 @@ public class AnalyzerTestCase extends TestCase {
 
 
     public class ResultChecker {
-      private final RemoveModulesModel myExpected = new RemoveModulesModel();
+      private final ModulesDependencies myExpected = new ModulesDependencies();
 
       @NotNull
       public ResultChecker removes(@NotNull ModuleBuilder from, @NotNull ModuleBuilder to) {
@@ -219,7 +219,7 @@ public class AnalyzerTestCase extends TestCase {
         return libOrModuleSet;
       }
 
-      public void assertActual(@NotNull RemoveModulesModel actual) {
+      public void assertActual(@NotNull ModulesDependencies actual) {
         Assert.assertEquals(myExpected, actual);
       }
     }

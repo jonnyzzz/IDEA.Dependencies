@@ -32,7 +32,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public class ModuleDependenciesUpdater {
   public static void updateModuleDependencies(@NotNull final Project project,
-                                              @NotNull final RemoveModulesModel model,
+                                              @NotNull final ModulesDependencies model,
                                               @NotNull final ProgressIndicator indicator) {
     //TODO: implement undo
     final Module[] modules = ModuleManager.getInstance(project).getModules();

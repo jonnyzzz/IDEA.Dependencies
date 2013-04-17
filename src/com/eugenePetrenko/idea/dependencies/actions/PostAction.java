@@ -17,7 +17,7 @@
 package com.eugenePetrenko.idea.dependencies.actions;
 
 import com.eugenePetrenko.idea.dependencies.ModuleDependenciesUpdater;
-import com.eugenePetrenko.idea.dependencies.RemoveModulesModel;
+import com.eugenePetrenko.idea.dependencies.ModulesDependencies;
 import com.eugenePetrenko.idea.dependencies.ui.LibrariesSelectionDialog;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
@@ -33,7 +33,7 @@ import org.jetbrains.annotations.NotNull;
  * Date: 08.04.13 0:22
  */
 public class PostAction {
-  public static void completeProcess(@NotNull final Project project, @NotNull final RemoveModulesModel model) {
+  public static void completeProcess(@NotNull final Project project, @NotNull final ModulesDependencies model) {
     final Application app = ApplicationManager.getApplication();
 
     if (model.isEmpty()) {
@@ -51,7 +51,7 @@ public class PostAction {
         dialog.show();
         if (!dialog.isOK()) return;
 
-        final RemoveModulesModel newModel = dialog.getModel();
+        final ModulesDependencies newModel = dialog.getModel();
         if (newModel.isEmpty()) return;
 
         doRemoveDependencies(app, project, newModel);
@@ -61,7 +61,7 @@ public class PostAction {
 
   private static void doRemoveDependencies(@NotNull final Application app,
                                            @NotNull final Project project,
-                                           @NotNull final RemoveModulesModel newModel) {
+                                           @NotNull final ModulesDependencies newModel) {
     ProgressManager.getInstance().run(new Task.Modal(project, "Removing Dependencies", false) {
       public void run(@NotNull final ProgressIndicator indicator) {
         ModuleDependenciesUpdater.updateModuleDependencies(project, newModel, indicator);

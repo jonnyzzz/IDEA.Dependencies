@@ -1,6 +1,6 @@
 package com.eugenePetrenko.idea.depedencies;
 
-import com.eugenePetrenko.idea.dependencies.RemoveModulesModel;
+import com.eugenePetrenko.idea.dependencies.ModulesDependencies;
 import com.intellij.openapi.roots.libraries.Library;
 
 /**
@@ -29,7 +29,7 @@ public class AnalyzerTest extends AnalyzerTestCase {
 
         dep(m2, m1);
 
-        RemoveModulesModel result = analyzeProject();
+        ModulesDependencies result = analyzeProject();
         System.out.println("result = " + result);
 
         //transitive dependencies must not be removed
@@ -54,7 +54,7 @@ public class AnalyzerTest extends AnalyzerTestCase {
         m1.lib(lc);
         m2.lib(ia, la, lb);
 
-        RemoveModulesModel result = analyzeProject();
+        ModulesDependencies result = analyzeProject();
         System.out.println("result = " + result);
 
         //transitive dependencies must not be removed
@@ -76,7 +76,7 @@ public class AnalyzerTest extends AnalyzerTestCase {
         m1.lib(lc);
         m1.lib(ia); //unused
 
-        RemoveModulesModel result = analyzeProject();
+        ModulesDependencies result = analyzeProject();
         System.out.println("result = " + result);
 
         assertBuilder().removes(m1, ia).assertActual(result);
@@ -94,7 +94,7 @@ public class AnalyzerTest extends AnalyzerTestCase {
 
         dep(m2, m1); //should not be here
 
-        RemoveModulesModel result = analyzeProject();
+        ModulesDependencies result = analyzeProject();
         System.out.println("result = " + result);
 
         assertBuilder().removes(m2, m1).assertActual(result);
@@ -122,7 +122,7 @@ public class AnalyzerTest extends AnalyzerTestCase {
         dep(mQ, mR); //uses none
 
 
-        RemoveModulesModel result = analyzeProject();
+        ModulesDependencies result = analyzeProject();
         System.out.println("result = " + result);
 
         assertBuilder()
