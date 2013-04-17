@@ -22,7 +22,6 @@ import com.eugenePetrenko.idea.dependencies.ui.Comparators;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.LangDataKeys;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
@@ -35,6 +34,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
+
+import static com.eugenePetrenko.idea.dependencies.AnalyzeStrategies.WITH_EXPORT_DEPENDENCIES;
 
 /**
  * Created 07.04.13 15:57
@@ -77,7 +78,7 @@ public class OnModuleAction extends AnAction {
                     BackgroundFromStartOption.getInstance()) {
 
       public void run(@NotNull final ProgressIndicator indicator) {
-        final ModulesDependencies toRemove = ModuleDependenciesAnalyzer.processModulesDependencies(indicator, ApplicationManager.getApplication(), modules, myProject);
+        final ModulesDependencies toRemove = ModuleDependenciesAnalyzer.processModulesDependencies(WITH_EXPORT_DEPENDENCIES, indicator, modules, myProject);
         PostAction.completeProcess(project, toRemove);
       }
     });

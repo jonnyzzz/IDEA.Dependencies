@@ -20,10 +20,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.roots.LibraryOrderEntry;
-import com.intellij.openapi.roots.ModuleOrderEntry;
-import com.intellij.openapi.roots.ModuleRootManager;
-import com.intellij.openapi.roots.RootPolicy;
+import com.intellij.openapi.roots.*;
 import com.intellij.openapi.util.Computable;
 import org.jetbrains.annotations.NotNull;
 
@@ -86,10 +83,22 @@ public class ModuleDependenciesHelper {
     });
   }
 
+  public static boolean isExportDependency(@NotNull final OrderEntry e) {
+    final LibOrModuleSet set = new LibOrModuleSet();
+    e.accept(createExportDependencyCollector(set), null);
+    return !set.isEmpty();
+  }
+
   @NotNull
   private static LibOrModuleSet collectModuleExports(@NotNull final Module module) {
     final LibOrModuleSet exports = new LibOrModuleSet();
-    ModuleRootManager.getInstance(module).processOrder(new RootPolicy<Void>(){
+    ModuleRootManager.getInstance(module).processOrder(createExportDependencyCollector(exports), null);
+    return exports;
+  }
+
+  @NotNull
+  private static RootPolicy<Void> createExportDependencyCollector(@NotNull final LibOrModuleSet exports) {
+    return new RootPolicy<Void>(){
       @Override
       public Void visitModuleOrderEntry(ModuleOrderEntry moduleOrderEntry, Void value) {
         if (!moduleOrderEntry.isExported()) return null;
@@ -103,7 +112,6 @@ public class ModuleDependenciesHelper {
         exports.addDependency(libraryOrderEntry);
         return null;
       }
-    }, null);
-    return exports;
+    };
   }
 }

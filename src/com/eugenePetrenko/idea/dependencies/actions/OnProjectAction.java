@@ -20,7 +20,6 @@ import com.eugenePetrenko.idea.dependencies.ModuleDependenciesAnalyzer;
 import com.eugenePetrenko.idea.dependencies.ModulesDependencies;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
@@ -29,6 +28,7 @@ import com.intellij.openapi.vcs.changes.BackgroundFromStartOption;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import static com.eugenePetrenko.idea.dependencies.AnalyzeStrategies.WITH_EXPORT_DEPENDENCIES;
 import static com.intellij.openapi.actionSystem.PlatformDataKeys.PROJECT;
 
 /**
@@ -52,7 +52,7 @@ public class OnProjectAction extends AnAction {
 
     ProgressManager.getInstance().run(new Task.Backgroundable(project, "Dependencies of All modules", true, BackgroundFromStartOption.getInstance()) {
       public void run(@NotNull final ProgressIndicator indicator) {
-        final ModulesDependencies result = ModuleDependenciesAnalyzer.processAllDependencies(indicator, ApplicationManager.getApplication(), project);
+        final ModulesDependencies result = ModuleDependenciesAnalyzer.processAllDependencies(WITH_EXPORT_DEPENDENCIES, indicator, project);
         PostAction.completeProcess(project, result);
       }
     });

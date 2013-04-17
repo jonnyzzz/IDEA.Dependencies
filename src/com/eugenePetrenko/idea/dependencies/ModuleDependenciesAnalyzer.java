@@ -16,7 +16,7 @@
 
 package com.eugenePetrenko.idea.dependencies;
 
-import com.intellij.openapi.application.Application;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -35,57 +35,57 @@ public class ModuleDependenciesAnalyzer {
    * Performs references analysis for all modules
    *
    * @param indicator progress
-   * @param app       application
    * @param project   project
    * @return set of module dependencies that could be removed
    */
   @NotNull
-  public static ModulesDependencies processAllDependencies(@NotNull final ProgressIndicator indicator,
-                                                           @NotNull final Application app,
+  public static ModulesDependencies processAllDependencies(@NotNull final AnalyzeStrategy strategy,
+                                                           @NotNull final ProgressIndicator indicator,
                                                            @NotNull final Project project) {
-    final Module[] modules = app.runReadAction(new Computable<Module[]>() {
+    final Module[] modules = ApplicationManager.getApplication().runReadAction(new Computable<Module[]>() {
       public Module[] compute() {
         return ModuleManager.getInstance(project).getSortedModules();
       }
     });
 
-    return processModulesDependencies(indicator, app, modules, project);
+    return processModulesDependencies(strategy, indicator, modules, project);
   }
 
   /**
    * Performs references analysis for given module
    *
+   *
    * @param indicator progress
    * @param app       application
-   * @param project   project
    * @param modules   modules
+   * @param project   project
    * @return set of module dependencies that could be removed
    */
   @NotNull
-  public static ModulesDependencies processModulesDependencies(@NotNull final ProgressIndicator indicator,
-                                                               @NotNull Application app,
-                                                               @NotNull Module[] modules,
-                                                               @NotNull Project project) {
+  public static ModulesDependencies processModulesDependencies(@NotNull final AnalyzeStrategy strategy,
+                                                               @NotNull final ProgressIndicator indicator,
+                                                               @NotNull final Module[] modules,
+                                                               @NotNull final Project project) {
     //take export dependencies closure
     //TODO: could be an option here to consider or not Exported deps
-    final Module[] allModules = ModuleDependenciesHelper.includeExportDependencies(project, modules);
+    final Module[] allModules = strategy.collectAllModules(project, modules);
 
-    final ModulesDependencies moduleUsages = ModuleDependenciesSearcher.collectionActualModulesDependencies(indicator, app, project, allModules);
+    final ModulesDependencies moduleUsages = ModuleDependenciesSearcher.collectionActualModulesDependencies(indicator, project, allModules);
 
     //update export dependency usages
-    ModuleDependenciesHelper.updateExportedDependenciesUsages(project, allModules, moduleUsages);
+    strategy.updateDetectedDependencies(project, allModules, moduleUsages);
 
     final ModulesDependencies moduleRemovables = new ModulesDependencies();
 
     for (final Module module : allModules) {
       final LibOrModuleSet toRemove = new LibOrModuleSet();
       final LibOrModuleSet actualUsages = moduleUsages.forModule(module);
-      app.runReadAction(new Runnable() {
+      ApplicationManager.getApplication().runReadAction(new Runnable() {
         public void run() {
           for (OrderEntry e : ModuleRootManager.getInstance(module).getOrderEntries()) {
-            if (!actualUsages.contains(e)) {
-              toRemove.addDependency(e);
-            }
+            if (!strategy.isSupportedDependency(e)) continue;
+            if (actualUsages.contains(e)) continue;
+            toRemove.addDependency(e);
           }
         }
       });
@@ -94,4 +94,5 @@ public class ModuleDependenciesAnalyzer {
 
     return moduleRemovables;
   }
+
 }

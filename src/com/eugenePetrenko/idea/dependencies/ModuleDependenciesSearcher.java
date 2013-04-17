@@ -20,7 +20,7 @@ import com.intellij.codeInsight.daemon.ProblemHighlightFilter;
 import com.intellij.concurrency.JobLauncher;
 import com.intellij.ide.util.DelegatingProgressIndicator;
 import com.intellij.lang.injection.InjectedLanguageManager;
-import com.intellij.openapi.application.Application;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
@@ -51,14 +51,12 @@ public class ModuleDependenciesSearcher {
    * Performs references analysis for given module
    *
    * @param indicator progress
-   * @param app       application
    * @param project   project
    * @param module    module
    * @return set of module dependencies that could be removed
    */
   @NotNull
   public static LibOrModuleSet collectionActualModuleDependencies(@NotNull final ProgressIndicator indicator,
-                                                                  @NotNull final Application app,
                                                                   @NotNull final Project project,
                                                                   @NotNull final Module module) {
     final LibOrModuleSet dependencies = new LibOrModuleSet();
@@ -96,7 +94,7 @@ public class ModuleDependenciesSearcher {
                 indicator.setFraction(current.incrementAndGet() / total);
 
                 final Set<OrderEntry> oes = new HashSet<OrderEntry>(10);
-                app.runReadAction(new Runnable() {
+                ApplicationManager.getApplication().runReadAction(new Runnable() {
                   public void run() {
                     final PsiFile psiFile = psiManager.findFile(file);
 
@@ -168,14 +166,12 @@ public class ModuleDependenciesSearcher {
      * Performs references analysis for given module
      *
      * @param indicator progress
-     * @param app       application
      * @param project   project
      * @param modules   modules
      * @return set of module dependencies that could be removed
      */
     @NotNull
     public static ModulesDependencies collectionActualModulesDependencies(@NotNull final ProgressIndicator indicator,
-                                                                          @NotNull final Application app,
                                                                           @NotNull final Project project,
                                                                           @NotNull final Module[] modules) {
       final ModulesDependencies result = new ModulesDependencies();
@@ -203,7 +199,7 @@ public class ModuleDependenciesSearcher {
             super.setFraction(outerFraction + fraction * outerStep);
           }
         };
-        result.addAllRemoves(module, collectionActualModuleDependencies(subProgress, app, project, module));
+        result.addAllRemoves(module, collectionActualModuleDependencies(subProgress, project, module));
       }
       return result;
     }

@@ -3,7 +3,6 @@ package com.eugenePetrenko.idea.depedencies;
 import com.eugenePetrenko.idea.dependencies.LibOrModuleSet;
 import com.eugenePetrenko.idea.dependencies.ModuleDependenciesAnalyzer;
 import com.eugenePetrenko.idea.dependencies.ModulesDependencies;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.application.Result;
 import com.intellij.openapi.application.WriteAction;
@@ -25,6 +24,8 @@ import org.junit.Assert;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+
+import static com.eugenePetrenko.idea.dependencies.AnalyzeStrategies.WITH_EXPORT_DEPENDENCIES;
 
 /**
  * Created by Eugene Petrenko (eugene.petrenko@gmail.com)
@@ -146,8 +147,8 @@ public abstract class AnalyzerTestCase extends TestCase {
     @NotNull
     public ModulesDependencies analyzeProject() {
       return ModuleDependenciesAnalyzer.processAllDependencies(
+              WITH_EXPORT_DEPENDENCIES,
               new EmptyProgressIndicator(),
-              ApplicationManager.getApplication(),
               project()
       );
     }
