@@ -16,17 +16,22 @@
 
 package com.eugenePetrenko.idea.dependencies.actions;
 
+import com.eugenePetrenko.idea.dependencies.AnalyzeStrategy;
 import com.eugenePetrenko.idea.dependencies.ModuleDependenciesAnalyzer;
 import com.eugenePetrenko.idea.dependencies.ModulesDependencies;
 import com.eugenePetrenko.idea.dependencies.ui.Comparators;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.LangDataKeys;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.changes.BackgroundFromStartOption;
 import com.intellij.util.Function;
@@ -34,7 +39,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicReference;
 
+import static com.eugenePetrenko.idea.dependencies.AnalyzeStrategies.SKIP_EXPORT_DEPENDENCIES;
 import static com.eugenePetrenko.idea.dependencies.AnalyzeStrategies.WITH_EXPORT_DEPENDENCIES;
 
 /**
@@ -44,7 +51,7 @@ import static com.eugenePetrenko.idea.dependencies.AnalyzeStrategies.WITH_EXPORT
  */
 public class OnModuleAction extends AnAction {
 
-  public static final Function<Module,String> TO_STRING = new Function<Module, String>() {
+  public static final Function<Module, String> TO_STRING = new Function<Module, String>() {
     public String fun(Module module) {
       return module.getName();
     }
@@ -70,6 +77,12 @@ public class OnModuleAction extends AnAction {
 
     Arrays.sort(modules, Comparators.MODULE_COMPARATOR);
 
+    final AnalyzeStrategy strategy = ApplicationManager.getApplication().runReadAction(new Computable<AnalyzeStrategy>() {
+      public AnalyzeStrategy compute() {
+        return decideStrategy(project, modules);
+      }
+    });
+
     ProgressManager.getInstance().run(
             new Task.Backgroundable(
                     e.getProject(),
@@ -77,10 +90,51 @@ public class OnModuleAction extends AnAction {
                     true,
                     BackgroundFromStartOption.getInstance()) {
 
-      public void run(@NotNull final ProgressIndicator indicator) {
-        final ModulesDependencies toRemove = ModuleDependenciesAnalyzer.processModulesDependencies(WITH_EXPORT_DEPENDENCIES, indicator, modules, myProject);
-        PostAction.completeProcess(project, toRemove);
+              public void run(@NotNull final ProgressIndicator indicator) {
+                final ModulesDependencies toRemove = ModuleDependenciesAnalyzer.processModulesDependencies(strategy, indicator, modules, myProject);
+                PostAction.completeProcess(project, toRemove);
+              }
+            });
+  }
+
+  @NotNull
+  private AnalyzeStrategy decideStrategy(@NotNull final Project project,
+                                         @NotNull final Module[] modules) {
+    boolean suggestExpand = ApplicationManager.getApplication().runReadAction(new Computable<Boolean>() {
+      public Boolean compute() {
+        return modules.length != WITH_EXPORT_DEPENDENCIES.collectAllModules(project, modules).length;
       }
     });
+
+    final AtomicReference<AnalyzeStrategy> strategy = new AtomicReference<AnalyzeStrategy>(WITH_EXPORT_DEPENDENCIES);
+    if (suggestExpand) {
+      ApplicationManager.getApplication().invokeAndWait(new Runnable() {
+        public void run() {
+          int result = Messages.showYesNoCancelDialog(project,
+                  "There are some modules with exported dependencies.\n" +
+                          "It's required to include more modules to the list " +
+                          "in order to analyze exported dependencies.\n\n" +
+                          "Do you like to include more modules?",
+                  "Jonnyzzz Dependencies",
+                  "Include Modules",
+                  "Skip Exports",
+                  "Cancel",
+                  null);
+          switch (result) {
+            case Messages.YES:
+              strategy.set(WITH_EXPORT_DEPENDENCIES);
+              break;
+            case Messages.NO:
+              strategy.set(SKIP_EXPORT_DEPENDENCIES);
+              break;
+            default:
+              strategy.set(null);
+              break;
+          }
+        }
+      }, ModalityState.any());
+    }
+
+    return strategy.get();
   }
 }

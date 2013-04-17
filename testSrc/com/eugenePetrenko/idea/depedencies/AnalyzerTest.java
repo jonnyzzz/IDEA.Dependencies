@@ -3,6 +3,9 @@ package com.eugenePetrenko.idea.depedencies;
 import com.eugenePetrenko.idea.dependencies.ModulesDependencies;
 import com.intellij.openapi.roots.libraries.Library;
 
+import static com.eugenePetrenko.idea.dependencies.AnalyzeStrategies.SKIP_EXPORT_DEPENDENCIES;
+import static com.eugenePetrenko.idea.dependencies.AnalyzeStrategies.WITH_EXPORT_DEPENDENCIES;
+
 /**
  * Created by Eugene Petrenko (eugene.petrenko@gmail.com)
  * Date: 09.04.13 10:25
@@ -29,7 +32,7 @@ public class AnalyzerTest extends AnalyzerTestCase {
 
         dep(m2, m1);
 
-        ModulesDependencies result = analyzeProject();
+        ModulesDependencies result = analyzeProject(WITH_EXPORT_DEPENDENCIES);
         System.out.println("result = " + result);
 
         //transitive dependencies must not be removed
@@ -54,7 +57,7 @@ public class AnalyzerTest extends AnalyzerTestCase {
         m1.lib(lc);
         m2.lib(ia, la, lb);
 
-        ModulesDependencies result = analyzeProject();
+        ModulesDependencies result = analyzeProject(WITH_EXPORT_DEPENDENCIES);
         System.out.println("result = " + result);
 
         //transitive dependencies must not be removed
@@ -76,7 +79,7 @@ public class AnalyzerTest extends AnalyzerTestCase {
         m1.lib(lc);
         m1.lib(ia); //unused
 
-        ModulesDependencies result = analyzeProject();
+        ModulesDependencies result = analyzeProject(WITH_EXPORT_DEPENDENCIES);
         System.out.println("result = " + result);
 
         assertBuilder().removes(m1, ia).assertActual(result);
@@ -94,7 +97,7 @@ public class AnalyzerTest extends AnalyzerTestCase {
 
         dep(m2, m1); //should not be here
 
-        ModulesDependencies result = analyzeProject();
+        ModulesDependencies result = analyzeProject(WITH_EXPORT_DEPENDENCIES);
         System.out.println("result = " + result);
 
         assertBuilder().removes(m2, m1).assertActual(result);
@@ -122,7 +125,72 @@ public class AnalyzerTest extends AnalyzerTestCase {
         dep(mQ, mR); //uses none
 
 
-        ModulesDependencies result = analyzeProject();
+        ModulesDependencies result = analyzeProject(WITH_EXPORT_DEPENDENCIES);
+        System.out.println("result = " + result);
+
+        assertBuilder()
+                .removes(mQ, mR)
+                .assertActual(result);
+      }
+    });
+  }
+
+  @TestFor(issues = "#1")
+  public void testExportDependency_skipExport() throws Throwable {
+    doTest(new AnalyzerTestAction() {
+      @Override
+      protected void testCode() throws Throwable {
+        final ModuleBuilder mE = module("mE", "exportClasses", "aExport");
+        final ModuleBuilder mR = module("mR", "exportClasses", "a");
+        final ModuleBuilder mB = module("mB", "exportClasses", "b");
+        final ModuleBuilder mC = module("mC", "exportClasses", "c");
+        final ModuleBuilder mD = module("mD", "exportClasses", "d");
+        final ModuleBuilder mQ = module("mQ", "exportClasses", "q");
+
+        dep(mR, mE, true); //this is exported dependency with no actual use inside
+
+        dep(mB, mR); //uses both mR and mE
+        dep(mC, mR); //uses only mR
+        dep(mD, mR); //uses only mE
+        dep(mQ, mR); //uses none
+
+
+        ModulesDependencies result = analyzeProject(SKIP_EXPORT_DEPENDENCIES);
+        System.out.println("result = " + result);
+
+        assertBuilder()
+                .removes(mQ, mR)
+                .assertActual(result);
+      }
+    });
+  }
+
+  @TestFor(issues = "#1")
+  public void testExportDependency_skipExport2() throws Throwable {
+    doTest(new AnalyzerTestAction() {
+      @Override
+      protected void testCode() throws Throwable {
+        final ModuleBuilder mE = module("mE", "exportClasses", "aExport");
+        final ModuleBuilder mZ = module("mZ", "transitiveClasses", "a");
+        final ModuleBuilder mR = module("mR", "exportClasses", "a");
+        final ModuleBuilder mB = module("mB", "exportClasses", "b");
+        final ModuleBuilder mC = module("mC", "exportClasses", "c");
+        final ModuleBuilder mD = module("mD", "exportClasses", "d");
+        final ModuleBuilder mQ = module("mQ", "exportClasses", "q");
+
+        dep(mR, mE, true); //this is exported dependency with no actual use inside
+        dep(mR, mZ, true); //this is exported dependency with no actual use inside
+
+        dep(mB, mZ, true);
+        dep(mB, mE, true);
+
+        dep(mB, mR); //uses both mR and mE
+        dep(mC, mR); //uses only mR
+        dep(mD, mR); //uses only mE
+        dep(mQ, mR); //uses none
+
+
+        ModulesDependencies result = analyzeProject(SKIP_EXPORT_DEPENDENCIES);
         System.out.println("result = " + result);
 
         assertBuilder()

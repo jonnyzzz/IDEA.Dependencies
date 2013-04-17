@@ -1,5 +1,6 @@
 package com.eugenePetrenko.idea.depedencies;
 
+import com.eugenePetrenko.idea.dependencies.AnalyzeStrategy;
 import com.eugenePetrenko.idea.dependencies.LibOrModuleSet;
 import com.eugenePetrenko.idea.dependencies.ModuleDependenciesAnalyzer;
 import com.eugenePetrenko.idea.dependencies.ModulesDependencies;
@@ -24,8 +25,6 @@ import org.junit.Assert;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
-
-import static com.eugenePetrenko.idea.dependencies.AnalyzeStrategies.WITH_EXPORT_DEPENDENCIES;
 
 /**
  * Created by Eugene Petrenko (eugene.petrenko@gmail.com)
@@ -145,9 +144,9 @@ public abstract class AnalyzerTestCase extends TestCase {
     }
 
     @NotNull
-    public ModulesDependencies analyzeProject() {
+    public ModulesDependencies analyzeProject(@NotNull AnalyzeStrategy strategy) {
       return ModuleDependenciesAnalyzer.processAllDependencies(
-              WITH_EXPORT_DEPENDENCIES,
+              strategy,
               new EmptyProgressIndicator(),
               project()
       );
