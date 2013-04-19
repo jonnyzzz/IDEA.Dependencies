@@ -50,7 +50,7 @@ public class OnProjectAction extends AnAction {
     final Project project = anActionEvent.getData(PROJECT);
     if (project == null) return;
 
-    ProgressManager.getInstance().run(new Task.Backgroundable(project, "Dependencies of All modules", true, BackgroundFromStartOption.getInstance()) {
+    ProgressManager.getInstance().run(new Task.Backgroundable(project, "Dependencies of All Modules", true, BackgroundFromStartOption.getInstance()) {
       public void run(@NotNull final ProgressIndicator indicator) {
         final ModulesDependencies result = ModuleDependenciesAnalyzer.processAllDependencies(WITH_EXPORT_DEPENDENCIES, indicator, project);
         PostAction.completeProcess(project, result);
