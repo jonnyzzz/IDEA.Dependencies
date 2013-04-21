@@ -32,17 +32,16 @@
   </project-components>
 
   <actions>
-    <group id="jonnyzzz.Actions" popup="true" text="Dependencies Remover">
+    <group id="jonnyzzz.Actions" popup="true" text="Remove Unused Module Dependencies">
       <add-to-group anchor="last" group-id="ToolsMenu"/>
 
-      <action class="com.eugenePetrenko.idea.dependencies.actions.OnProjectAction" text="Check Global Dependencies" id="jproject"/>
-      <action class="com.eugenePetrenko.idea.dependencies.actions.OnModuleAction" text="Check Module Dependencies" id="jmodule"/>
+      <action class="com.eugenePetrenko.idea.dependencies.actions.OnProjectAction" text="Analyze All Modules" id="jproject"/>
+      <action class="com.eugenePetrenko.idea.dependencies.actions.OnModuleAction" text="Analyze Selected Modules" id="jmodule"/>
     </group>
 
     <group>
-      <add-to-group group-id="ProjectViewPopupMenu"/>
-
-      <reference ref="jmodule"/>
+      <add-to-group group-id="ProjectViewPopupMenuSettingsGroup" anchor="last"/>
+      <action class="com.eugenePetrenko.idea.dependencies.actions.OnModuleAction" text="Remove Unused Dependencies" id="jmodule3"/>
     </group>
   </actions>
 
