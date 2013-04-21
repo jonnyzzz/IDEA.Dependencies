@@ -24,10 +24,7 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.module.ModuleType;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.roots.LibraryOrderEntry;
-import com.intellij.openapi.roots.ModuleOrderEntry;
-import com.intellij.openapi.roots.ModuleRootManager;
-import com.intellij.openapi.roots.RootPolicy;
+import com.intellij.openapi.roots.*;
 import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.roots.ui.configuration.libraries.LibraryPresentationManager;
 import com.intellij.openapi.ui.DialogWrapper;
@@ -209,7 +206,7 @@ public class LibrariesSelectionDialog extends DialogWrapper {
         public Void visitModuleOrderEntry(@NotNull ModuleOrderEntry moduleOrderEntry, Void value) {
           final Module mod = moduleOrderEntry.getModule();
           if (mod == null) return null;
-          addNode(new DependencyModuleNode(libOrModuleSet, mod));
+          addNode(new DependencyModuleNode(libOrModuleSet, moduleOrderEntry, mod));
           return null;
         }
 
@@ -217,7 +214,7 @@ public class LibrariesSelectionDialog extends DialogWrapper {
         public Void visitLibraryOrderEntry(@NotNull LibraryOrderEntry libraryOrderEntry, Void value) {
           final Library lib = libraryOrderEntry.getLibrary();
           if (lib == null) return null;
-          addNode(new DependencyLibNode(libOrModuleSet, lib));
+          addNode(new DependencyLibNode(libOrModuleSet, libraryOrderEntry, lib));
 
           return null;
         }
@@ -242,12 +239,23 @@ public class LibrariesSelectionDialog extends DialogWrapper {
     }
   }
 
-  private abstract class DependencyNodeBase extends DefaultMutableTreeNode {
+  private interface DependencyNode {
+    @NotNull
+    DependencyScope getDependencyScope();
+  }
+
+  private interface RemovableNode {
+    boolean isRemoved();
+  }
+
+  private abstract class DependencyNodeBase<T extends ExportableOrderEntry> extends DefaultMutableTreeNode implements RemovableNode, DependencyNode {
     protected final LibOrModuleSet myFilter;
+    protected final T myEntry;
     private boolean myIsRemoved;
 
-    protected DependencyNodeBase(@NotNull final LibOrModuleSet filter) {
+    protected DependencyNodeBase(@NotNull final LibOrModuleSet filter, @NotNull final T entry) {
       myFilter = filter;
+      myEntry = entry;
     }
 
     public boolean isRemoved() {
@@ -262,14 +270,20 @@ public class LibrariesSelectionDialog extends DialogWrapper {
       setRemoved(!isRemoved());
     }
 
+    @NotNull
+    public DependencyScope getDependencyScope() {
+      return myEntry.getScope();
+    }
+
     public abstract boolean intersects();
   }
 
-  private class DependencyModuleNode extends DependencyNodeBase implements ModuleHoldingNode {
+  private class DependencyModuleNode extends DependencyNodeBase<ModuleOrderEntry> implements ModuleHoldingNode {
+    @NotNull
     private final Module myModule;
 
-    private DependencyModuleNode(@NotNull LibOrModuleSet filter, @NotNull Module module) {
-      super(filter);
+    public DependencyModuleNode(@NotNull LibOrModuleSet filter, @NotNull ModuleOrderEntry entry, @NotNull Module module) {
+      super(filter, entry);
       myModule = module;
     }
 
@@ -294,12 +308,12 @@ public class LibrariesSelectionDialog extends DialogWrapper {
     }
   }
 
-  private class DependencyLibNode extends DependencyNodeBase implements LibraryHoldingNode {
+  private class DependencyLibNode extends DependencyNodeBase<LibraryOrderEntry> implements LibraryHoldingNode {
     private final Library myLib;
 
-    private DependencyLibNode(@NotNull LibOrModuleSet filter, @NotNull Library lib) {
-      super(filter);
-      myLib = lib;
+    private DependencyLibNode(@NotNull LibOrModuleSet filter, @NotNull LibraryOrderEntry entry, @NotNull Library library) {
+      super(filter, entry);
+      myLib = library;
     }
 
     @NotNull
@@ -336,11 +350,18 @@ public class LibrariesSelectionDialog extends DialogWrapper {
         textType |= STYLE_BOLD;
       }
 
+      if (value instanceof DependencyNode) {
+        DependencyScope scope = ((DependencyNode) value).getDependencyScope();
+        append("[");
+        append(scope.getDisplayName(), new SimpleTextAttributes(STYLE_BOLD, UIUtil.getTreeForeground()));
+        append("] ");
+      }
+
       if (value instanceof ModuleHoldingNode) {
         final ModuleHoldingNode node = (ModuleHoldingNode) value;
         Module module = node.getModule();
         setIcon(ModuleType.get(module).getIcon());
-        append("[" + module.getName() + "] ", new SimpleTextAttributes(textType, UIUtil.getTreeForeground()));
+        append(module.getName() + " ", new SimpleTextAttributes(textType, UIUtil.getTreeForeground()));
       }
 
       if (value instanceof LibraryHoldingNode) {
@@ -348,7 +369,7 @@ public class LibrariesSelectionDialog extends DialogWrapper {
         final Library lib = node.getLibrary();
 
         setIcon(LibraryPresentationManager.getInstance().getNamedLibraryIcon(lib, null));
-        append("[" + lib.getName() + "] ", new SimpleTextAttributes(textType, UIUtil.getTreeForeground()));
+        append(lib.getName() + " ", new SimpleTextAttributes(textType, UIUtil.getTreeForeground()));
       }
     }
   }
