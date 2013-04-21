@@ -93,7 +93,7 @@ public class LibrariesSelectionDialog extends DialogWrapper {
     final JPanel pn = new JPanel();
     pn.setLayout(new BorderLayout());
     pn.add(new JBScrollPane(myTree), BorderLayout.CENTER);
-    pn.add(new Label("Use Insert or Delete key to include/exclude dependencies from remove"), BorderLayout.SOUTH);
+    pn.add(new Label("Use Insert or Delete key to include/exclude or SPACE to toggle dependencies from remove"), BorderLayout.SOUTH);
 
     DataManager.registerDataProvider(pn, new DataProvider() {
       public Object getData(@NonNls String dataId) {
@@ -154,6 +154,18 @@ public class LibrariesSelectionDialog extends DialogWrapper {
         myTree.updateUI();
       }
     }.registerCustomShortcutSet(CustomShortcutSet.fromString("INSERT"), pn);
+    new AnAction("Toggle") {
+      @Override
+      public void actionPerformed(AnActionEvent e) {
+        Collection<DependencyNodeBase> nodes = e.getData(DEPENDENCY_NODE_ARRAY);
+        if (nodes == null) return;
+
+        for (DependencyNodeBase node : nodes) {
+          node.toggle();
+        }
+        myTree.updateUI();
+      }
+    }.registerCustomShortcutSet(CustomShortcutSet.fromString("SPACE"), pn);
 
     return pn;
   }
@@ -244,6 +256,10 @@ public class LibrariesSelectionDialog extends DialogWrapper {
 
     public void setRemoved(boolean isRemoved) {
       myIsRemoved = isRemoved;
+    }
+
+    public void toggle() {
+      setRemoved(!isRemoved());
     }
 
     public abstract boolean intersects();
