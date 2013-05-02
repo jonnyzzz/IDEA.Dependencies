@@ -19,3 +19,5 @@ See LICENSE.txt
 Plugin Binaries
 ===============
 Checkout `releases` branch in the repo
+
+Plugin is deployed into [Plugins Repository](http://plugins.jetbrains.com/plugin?pr=&pluginId=7222)
