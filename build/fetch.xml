@@ -15,7 +15,7 @@
      <!-- the script is wrapper under maven ant tasks -->
 
      <maven_fetch dest="intellij-annotations">
-        <dependency groupId="com.intellij" artifactId="annotations" version="12.0" />
+        <dependency groupId="org.jetbrains" artifactId="annotations" version="13.0" />
      </maven_fetch>
 
      <maven_fetch dest="testng">
