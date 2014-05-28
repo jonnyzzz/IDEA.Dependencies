@@ -9,6 +9,7 @@
       ]]></description>
 
   <change-notes><![CDATA[
+      Fixed compatibility with IntelliJ IDEA 13.x
       Initial release
       ]]>
   </change-notes>
