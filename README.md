@@ -21,3 +21,19 @@ Plugin Binaries
 Checkout `releases` branch in the repo
 
 Plugin is deployed into [Plugins Repository](http://plugins.jetbrains.com/plugin?pr=&pluginId=7222)
+
+
+Building
+========
+
+Call `ant -f fetch.xml fetch` from the `build` directory
+
+Use IntelliJ IDEA for the build/development
+
+
+
+
+This project uses https://github.com/jonnyzzz/intellij-ant-maven
+to simplify development
+
+
