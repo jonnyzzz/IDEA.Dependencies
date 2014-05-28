@@ -19,13 +19,15 @@ package com.eugenePetrenko.idea.dependencies.actions;
 import com.eugenePetrenko.idea.dependencies.ModuleDependenciesUpdater;
 import com.eugenePetrenko.idea.dependencies.ModulesDependencies;
 import com.eugenePetrenko.idea.dependencies.ui.LibrariesSelectionDialog;
+import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationType;
+import com.intellij.notification.Notifications;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.Messages;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -39,7 +41,13 @@ public class PostAction {
     if (model.isEmpty()) {
       app.invokeLater(new Runnable() {
         public void run() {
-          Messages.showInfoMessage(project, "No unused dependencies were detected", "Jonnyzzz");
+          Notifications.Bus.notify(new Notification(
+                  "Unused Dependencies",
+                  "Remove Unused Dependencies",
+                  "No unused dependencies were detected",
+                  NotificationType.INFORMATION,
+                  null
+          ), project);
         }
       });
       return;
