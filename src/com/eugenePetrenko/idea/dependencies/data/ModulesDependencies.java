@@ -33,15 +33,18 @@ import java.util.TreeMap;
 public class ModulesDependencies {
   private final Map<String, LibOrModuleSet> myModuleToRemove = new TreeMap<String, LibOrModuleSet>();
 
-  public void addRemoves(@NotNull final Module module, @Nullable final LibOrModuleSet set) {
+  public void addRemoves(@NotNull final Module module,
+                         @Nullable final LibOrModuleSet set) {
     myModuleToRemove.put(module.getName(), set);
   }
 
-  public void addAllRemoves(@NotNull final Module fromModule, @NotNull LibOrModuleSet dependencies) {
+  public void addAllRemoves(@NotNull final Module fromModule,
+                            @NotNull final LibOrModuleSet dependencies) {
     addAllRemoves(fromModule.getName(), dependencies);
   }
 
-  private void addAllRemoves(@NotNull final String fromModule, @NotNull LibOrModuleSet dependencies) {
+  private void addAllRemoves(@NotNull final String fromModule,
+                             @NotNull final LibOrModuleSet dependencies) {
     final LibOrModuleSet d = myModuleToRemove.get(fromModule);
     if (d == null) {
       myModuleToRemove.put(fromModule, dependencies);
@@ -50,14 +53,14 @@ public class ModulesDependencies {
     }
   }
 
-  public void addAllRemoves(@NotNull ModulesDependencies model) {
+  public void addAllRemoves(@NotNull final ModulesDependencies model) {
     for (Map.Entry<String, LibOrModuleSet> e : model.myModuleToRemove.entrySet()) {
       addAllRemoves(e.getKey(), e.getValue());
     }
   }
 
   @NotNull
-  public LibOrModuleSet forModule(@NotNull Module module) {
+  public LibOrModuleSet forModule(@NotNull final Module module) {
     LibOrModuleSet set = myModuleToRemove.get(module.getName());
     if (set == null) {
       set = new LibOrModuleSet();

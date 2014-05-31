@@ -39,33 +39,33 @@ public class LibOrModuleSet {
   private final Set<String> myModules = new TreeSet<String>();
   private final Set<String> myLibs = new TreeSet<String>();
 
-  public boolean contains(@Nullable Module mod) {
+  public boolean contains(@Nullable final Module mod) {
     return mod != null && myModules.contains(mod.getName());
   }
 
-  public boolean contains(@Nullable Library lib) {
+  public boolean contains(@Nullable final Library lib) {
     if (lib == null) return false;
     final String name = lib.getName();
     return name != null && myLibs.contains(name);
   }
 
-  public boolean contains(@Nullable OrderEntry e) {
+  public boolean contains(@Nullable final OrderEntry e) {
     if (e == null) return false;
     return e.accept(CONTAINS, false);
   }
 
-  public void addDependencies(@NotNull Collection<? extends OrderEntry> es) {
+  public void addDependencies(@NotNull final Collection<? extends OrderEntry> es) {
     for (OrderEntry e : es) {
       addDependency(e);
     }
   }
 
-  public void addDependencies(@NotNull LibOrModuleSet deps) {
+  public void addDependencies(@NotNull final LibOrModuleSet deps) {
     myLibs.addAll(deps.myLibs);
     myModules.addAll(deps.myModules);
   }
 
-  public void addDependency(@NotNull OrderEntry e) {
+  public void addDependency(@NotNull final OrderEntry e) {
     if (!DependenciesFilter.REMOVABLE_DEPENDENCY.apply(e)) return;
     e.accept(ADD, null);
   }
@@ -77,29 +77,26 @@ public class LibOrModuleSet {
     myLibs.add(name);
   }
 
-  public boolean removeDependency(@Nullable final Library lib) {
-    if (lib == null) return true;
+  public void removeDependency(@Nullable final Library lib) {
+    if (lib == null) return;
     String name = lib.getName();
-    if (name == null) return true;
+    if (name == null) return;
     myLibs.remove(name);
-    return false;
   }
 
-  public boolean addDependency(@Nullable Module module) {
-    if (module == null) return true;
+  public void addDependency(@Nullable final Module module) {
+    if (module == null) return;
     final String name = module.getName();
     myModules.add(name);
-    return false;
   }
 
-  public boolean removeDependency(@Nullable Module module) {
-    if (module == null) return true;
+  public void removeDependency(@Nullable final Module module) {
+    if (module == null) return;
     final String name = module.getName();
     myModules.remove(name);
-    return false;
   }
 
-  public void removeDependency(@NotNull OrderEntry e) {
+  public void removeDependency(@NotNull final OrderEntry e) {
     e.accept(REMOVE, null);
   }
 
