@@ -58,7 +58,6 @@ public class ModuleDependenciesAnalyzer {
    *
    *
    * @param indicator progress
-   * @param app       application
    * @param modules   modules
    * @param project   project
    * @return set of module dependencies that could be removed
