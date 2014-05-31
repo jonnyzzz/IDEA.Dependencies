@@ -94,7 +94,7 @@ public class OnModuleAction extends AnAction {
                     "It's required to include more modules to the list " +
                     "in order to analyze exported dependencies.\n\n" +
                     "Do you like to include more modules?",
-            "Jonnyzzz Dependencies",
+            "Unused Dependencies",
             "Include Modules",
             "Skip Exports",
             "Cancel",
