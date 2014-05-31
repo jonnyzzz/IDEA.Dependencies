@@ -16,8 +16,8 @@
 
 package com.eugenePetrenko.idea.dependencies.ui;
 
-import com.eugenePetrenko.idea.dependencies.LibOrModuleSet;
-import com.eugenePetrenko.idea.dependencies.ModulesDependencies;
+import com.eugenePetrenko.idea.dependencies.data.LibOrModuleSet;
+import com.eugenePetrenko.idea.dependencies.data.ModulesDependencies;
 import com.intellij.ide.DataManager;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.module.Module;

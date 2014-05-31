@@ -17,7 +17,7 @@
 package com.eugenePetrenko.idea.dependencies.actions;
 
 import com.eugenePetrenko.idea.dependencies.ModuleDependenciesUpdater;
-import com.eugenePetrenko.idea.dependencies.ModulesDependencies;
+import com.eugenePetrenko.idea.dependencies.data.ModulesDependencies;
 import com.eugenePetrenko.idea.dependencies.ui.LibrariesSelectionDialog;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;

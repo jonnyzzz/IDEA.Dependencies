@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.eugenePetrenko.idea.dependencies;
+package com.eugenePetrenko.idea.dependencies.data;
 
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.util.text.StringUtil;

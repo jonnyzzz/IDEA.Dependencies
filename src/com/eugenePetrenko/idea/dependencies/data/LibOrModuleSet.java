@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.eugenePetrenko.idea.dependencies;
+package com.eugenePetrenko.idea.dependencies.data;
 
+import com.eugenePetrenko.idea.dependencies.DependenciesFilter;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.roots.LibraryOrderEntry;
 import com.intellij.openapi.roots.ModuleOrderEntry;

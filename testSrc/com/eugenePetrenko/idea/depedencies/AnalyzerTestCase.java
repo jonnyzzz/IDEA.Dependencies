@@ -1,9 +1,9 @@
 package com.eugenePetrenko.idea.depedencies;
 
 import com.eugenePetrenko.idea.dependencies.AnalyzeStrategy;
-import com.eugenePetrenko.idea.dependencies.LibOrModuleSet;
+import com.eugenePetrenko.idea.dependencies.data.LibOrModuleSet;
 import com.eugenePetrenko.idea.dependencies.ModuleDependenciesAnalyzer;
-import com.eugenePetrenko.idea.dependencies.ModulesDependencies;
+import com.eugenePetrenko.idea.dependencies.data.ModulesDependencies;
 import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.application.Result;
 import com.intellij.openapi.application.WriteAction;
