@@ -21,10 +21,7 @@ import com.intellij.openapi.util.text.StringUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by Eugene Petrenko (eugene.petrenko@gmail.com)
@@ -43,6 +40,11 @@ public class ModulesDependencies {
     } else {
       d.addDependencies(dependencies);
     }
+  }
+
+  @NotNull
+  public Collection<Module> modules() {
+    return myModuleToRemove.keySet();
   }
 
   @Nullable

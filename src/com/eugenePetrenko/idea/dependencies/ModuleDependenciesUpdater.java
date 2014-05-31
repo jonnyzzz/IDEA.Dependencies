@@ -19,7 +19,6 @@ package com.eugenePetrenko.idea.dependencies;
 import com.eugenePetrenko.idea.dependencies.data.LibOrModuleSet;
 import com.eugenePetrenko.idea.dependencies.data.ModulesDependencies;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ModifiableRootModel;
 import com.intellij.openapi.roots.ModuleRootManager;
@@ -34,10 +33,8 @@ public class ModuleDependenciesUpdater {
   public static void updateModuleDependencies(@NotNull final Project project,
                                               @NotNull final ModulesDependencies model) {
     //TODO: implement undo
-    final Module[] modules = ModuleManager.getInstance(project).getModules();
-    if (modules.length == 0) return;
 
-    for (final Module module : modules) {
+    for (final Module module : model.modules()) {
       final LibOrModuleSet toRemove = model.forModule(module);
       if (toRemove == null) return;
 
