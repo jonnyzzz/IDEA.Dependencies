@@ -27,8 +27,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Set;
-import java.util.TreeSet;
 
 /**
 * Created 07.04.13 15:54
@@ -36,17 +36,15 @@ import java.util.TreeSet;
 * @author Eugene Petrenko (eugene.petrenko@jetbrains.com)
 */
 public class LibOrModuleSet {
-  private final Set<String> myModules = new TreeSet<String>();
-  private final Set<String> myLibs = new TreeSet<String>();
+  private final Set<Module> myModules = new HashSet<Module>();
+  private final Set<Library> myLibs = new HashSet<Library>();
 
   public boolean contains(@Nullable final Module mod) {
-    return mod != null && myModules.contains(mod.getName());
+    return mod != null && myModules.contains(mod);
   }
 
   public boolean contains(@Nullable final Library lib) {
-    if (lib == null) return false;
-    final String name = lib.getName();
-    return name != null && myLibs.contains(name);
+    return lib != null && myLibs.contains(lib);
   }
 
   public boolean contains(@Nullable final OrderEntry e) {
@@ -72,32 +70,22 @@ public class LibOrModuleSet {
 
   public void addDependency(@Nullable final Library lib) {
     if (lib == null) return;
-    final String name = lib.getName();
-    if (name == null) return;
-    myLibs.add(name);
+    myLibs.add(lib);
   }
 
   public void removeDependency(@Nullable final Library lib) {
     if (lib == null) return;
-    String name = lib.getName();
-    if (name == null) return;
-    myLibs.remove(name);
+    myLibs.remove(lib);
   }
 
   public void addDependency(@Nullable final Module module) {
     if (module == null) return;
-    final String name = module.getName();
-    myModules.add(name);
+    myModules.add(module);
   }
 
   public void removeDependency(@Nullable final Module module) {
     if (module == null) return;
-    final String name = module.getName();
-    myModules.remove(name);
-  }
-
-  public void removeDependency(@NotNull final OrderEntry e) {
-    e.accept(REMOVE, null);
+    myModules.remove(module);
   }
 
   public boolean isEmpty() {
@@ -111,14 +99,14 @@ public class LibOrModuleSet {
 
     if (!myModules.isEmpty()) {
       sb.append("  Modules:\n");
-      for (String m : myModules) {
+      for (Module m : myModules) {
         sb.append("    ").append(m).append("\n");
       }
     }
 
     if (!myLibs.isEmpty()) {
       sb.append("  Libraries:\n");
-      for (String m : myLibs) {
+      for (Library m : myLibs) {
         sb.append("    ").append(m).append("\n");
       }
     }
@@ -136,20 +124,6 @@ public class LibOrModuleSet {
     @Override
     public Void visitModuleOrderEntry(ModuleOrderEntry moduleOrderEntry, Void value) {
       addDependency(moduleOrderEntry.getModule());
-      return null;
-    }
-  };
-
-  private final RootPolicy<Void> REMOVE = new RootPolicy<Void>(){
-    @Override
-    public Void visitLibraryOrderEntry(LibraryOrderEntry libraryOrderEntry, Void value) {
-      removeDependency(libraryOrderEntry.getLibrary());
-      return null;
-    }
-
-    @Override
-    public Void visitModuleOrderEntry(ModuleOrderEntry moduleOrderEntry, Void value) {
-      removeDependency(moduleOrderEntry.getModule());
       return null;
     }
   };

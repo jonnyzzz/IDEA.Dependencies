@@ -201,7 +201,7 @@ public class ModuleDependenciesSearcher {
             super.setFraction(outerFraction + fraction * outerStep);
           }
         };
-        result.addAllRemoves(module, collectionActualModuleDependencies(subProgress, project, module));
+        result.addAll(module, collectionActualModuleDependencies(subProgress, project, module));
       }
       return result;
     }

@@ -178,7 +178,7 @@ public class LibrariesSelectionDialog extends DialogWrapper {
       Arrays.sort(modules, Comparators.MODULE_COMPARATOR);
       for (Module module : modules) {
         final LibOrModuleSet filter = myModel.forModule(module);
-        if (filter.isEmpty()) continue;
+        if (filter == null) continue;
         children.add(new ModuleNode(module, filter));
       }
       this.children = children;

@@ -85,12 +85,12 @@ public class ModuleDependenciesAnalyzer {
         public void run() {
           for (OrderEntry e : ModuleRootManager.getInstance(module).getOrderEntries()) {
             if (!strategy.isSupportedDependency(e)) continue;
-            if (actualUsages.contains(e)) continue;
+            if (actualUsages != null && actualUsages.contains(e)) continue;
             toRemove.addDependency(e);
           }
         }
       });
-      moduleRemovables.addAllRemoves(module, toRemove);
+      moduleRemovables.addAll(module, toRemove);
     }
 
     return moduleRemovables;

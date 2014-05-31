@@ -39,7 +39,7 @@ public class ModuleDependenciesUpdater {
 
     for (final Module module : modules) {
       final LibOrModuleSet toRemove = model.forModule(module);
-      if (toRemove.isEmpty()) return;
+      if (toRemove == null) return;
 
       final ModifiableRootModel rootModel = ModuleRootManager.getInstance(module).getModifiableModel();
       try {

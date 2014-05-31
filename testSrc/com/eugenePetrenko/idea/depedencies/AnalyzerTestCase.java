@@ -188,19 +188,18 @@ public abstract class AnalyzerTestCase extends TestCase {
 
       @NotNull
       public ResultChecker removes(@NotNull ModuleBuilder from, @NotNull ModuleBuilder to) {
-        getOrCreate(from).addDependency(to.module());
+        LibOrModuleSet set = new LibOrModuleSet();
+        set.addDependency(to.module());
+        myExpected.addAll(from.module(), set);
         return this;
       }
 
       @NotNull
       public ResultChecker removes(@NotNull ModuleBuilder from, @NotNull Library to) {
-        getOrCreate(from).addDependency(to);
+        LibOrModuleSet set = new LibOrModuleSet();
+        set.addDependency(to);
+        myExpected.addAll(from.module(), set);
         return this;
-      }
-
-      @NotNull
-      private LibOrModuleSet getOrCreate(@NotNull final ModuleBuilder from) {
-        return myExpected.forModule(from.module());
       }
 
       public void assertActual(@NotNull ModulesDependencies actual) {
