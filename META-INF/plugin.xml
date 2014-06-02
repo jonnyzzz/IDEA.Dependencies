@@ -1,7 +1,7 @@
 <idea-plugin version="2">
   <id>com.eugenePetrenko.idea.dependencies</id>
   <name>Jonnyzzz Dependencies</name>
-  <version>1.0.9</version>
+  <version>1.0.10</version>
   <vendor email="idea@jonnyzzz.name" url="http://blog.jonnyzzz.name">Eugene Petrenko</vendor>
 
   <description><![CDATA[
