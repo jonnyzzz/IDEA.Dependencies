@@ -16,6 +16,8 @@
 
 package com.eugenePetrenko.idea.dependencies;
 
+import com.eugenePetrenko.idea.dependencies.data.LibOrModuleSet;
+import com.eugenePetrenko.idea.dependencies.data.ModulesDependencies;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
@@ -83,12 +85,12 @@ public class ModuleDependenciesAnalyzer {
         public void run() {
           for (OrderEntry e : ModuleRootManager.getInstance(module).getOrderEntries()) {
             if (!strategy.isSupportedDependency(e)) continue;
-            if (actualUsages.contains(e)) continue;
+            if (actualUsages != null && actualUsages.contains(e)) continue;
             toRemove.addDependency(e);
           }
         }
       });
-      moduleRemovables.addAllRemoves(module, toRemove);
+      moduleRemovables.addAll(module, toRemove);
     }
 
     return moduleRemovables;

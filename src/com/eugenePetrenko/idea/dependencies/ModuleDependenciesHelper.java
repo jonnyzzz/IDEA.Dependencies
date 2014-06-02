@@ -16,6 +16,8 @@
 
 package com.eugenePetrenko.idea.dependencies;
 
+import com.eugenePetrenko.idea.dependencies.data.LibOrModuleSet;
+import com.eugenePetrenko.idea.dependencies.data.ModulesDependencies;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
@@ -74,10 +76,15 @@ public class ModuleDependenciesHelper {
           if (exports.isEmpty()) continue;
 
           //take modules that depends on the module that has export dependency
-          final LibOrModuleSet moduleDeps = deps.forModule(module);
+          final LibOrModuleSet moduleDeps = new LibOrModuleSet();
           for (Module dependee : moduleManager.getModuleDependentModules(module)) {
-            moduleDeps.addDependencies(deps.forModule(dependee).intersect(exports));
+            final LibOrModuleSet libOrModuleDep = deps.forModule(dependee);
+            if (libOrModuleDep == null) continue;
+
+            moduleDeps.addDependencies(libOrModuleDep.intersect(exports));
           }
+
+          deps.addAll(module, moduleDeps);
         }
       }
     });

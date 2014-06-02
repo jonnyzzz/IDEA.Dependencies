@@ -16,11 +16,9 @@
 
 package com.eugenePetrenko.idea.dependencies;
 
-import com.intellij.openapi.application.Result;
-import com.intellij.openapi.application.WriteAction;
+import com.eugenePetrenko.idea.dependencies.data.LibOrModuleSet;
+import com.eugenePetrenko.idea.dependencies.data.ModulesDependencies;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.module.ModuleManager;
-import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ModifiableRootModel;
 import com.intellij.openapi.roots.ModuleRootManager;
@@ -33,52 +31,30 @@ import org.jetbrains.annotations.NotNull;
  */
 public class ModuleDependenciesUpdater {
   public static void updateModuleDependencies(@NotNull final Project project,
-                                              @NotNull final ModulesDependencies model,
-                                              @NotNull final ProgressIndicator indicator) {
+                                              @NotNull final ModulesDependencies model) {
     //TODO: implement undo
-    final Module[] modules = ModuleManager.getInstance(project).getModules();
-    if (modules.length == 0) return;
 
-    final double total = modules.length;
-    int current = 0;
+    for (final Module module : model.modules()) {
+      final LibOrModuleSet toRemove = model.forModule(module);
+      if (toRemove == null) return;
 
-    for (final Module module : modules) {
-      indicator.setFraction(++current / total);
-      indicator.setText(module.getName());
-
-      runWriteAction(new Runnable() {
-        public void run() {
-          final LibOrModuleSet toRemove = model.forModule(module);
-          if (toRemove.isEmpty()) return;
-
-          final ModifiableRootModel model = ModuleRootManager.getInstance(module).getModifiableModel();
-          try {
-            boolean containedChanges = false;
-            for (OrderEntry e : model.getOrderEntries()) {
-              if (toRemove.contains(e)) {
-                model.removeOrderEntry(e);
-                containedChanges = true;
-              }
-            }
-
-            if (containedChanges) {
-              model.commit();
-            }
-          } finally {
-            //it's not allowed to dispose model after commit
-            if (model.isWritable()) model.dispose();
+      final ModifiableRootModel rootModel = ModuleRootManager.getInstance(module).getModifiableModel();
+      try {
+        boolean containedChanges = false;
+        for (OrderEntry e : rootModel.getOrderEntries()) {
+          if (toRemove.contains(e)) {
+            rootModel.removeOrderEntry(e);
+            containedChanges = true;
           }
         }
-      });
-    }
-  }
 
-  private static void runWriteAction(@NotNull final Runnable action) {
-    new WriteAction() {
-      @Override
-      protected void run(Result result) throws Throwable {
-        action.run();
+        if (containedChanges) {
+          rootModel.commit();
+        }
+      } finally {
+        //it's not allowed to dispose model after commit
+        if (rootModel.isWritable()) rootModel.dispose();
       }
-    }.execute();
+    }
   }
 }

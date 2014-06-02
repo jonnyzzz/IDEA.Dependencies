@@ -17,15 +17,16 @@
 package com.eugenePetrenko.idea.dependencies.actions;
 
 import com.eugenePetrenko.idea.dependencies.ModuleDependenciesUpdater;
-import com.eugenePetrenko.idea.dependencies.ModulesDependencies;
+import com.eugenePetrenko.idea.dependencies.data.ModulesDependencies;
 import com.eugenePetrenko.idea.dependencies.ui.LibrariesSelectionDialog;
+import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationType;
+import com.intellij.notification.Notifications;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.ProgressManager;
-import com.intellij.openapi.progress.Task;
+import com.intellij.openapi.application.Result;
+import com.intellij.openapi.application.WriteAction;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.Messages;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -39,7 +40,13 @@ public class PostAction {
     if (model.isEmpty()) {
       app.invokeLater(new Runnable() {
         public void run() {
-          Messages.showInfoMessage(project, "No unused dependencies were detected", "Jonnyzzz");
+          Notifications.Bus.notify(new Notification(
+                  "Unused Dependencies",
+                  "Remove Unused Dependencies",
+                  "No unused dependencies were detected",
+                  NotificationType.INFORMATION,
+                  null
+          ), project);
         }
       });
       return;
@@ -54,28 +61,33 @@ public class PostAction {
         final ModulesDependencies newModel = dialog.getModel();
         if (newModel.isEmpty()) return;
 
-        doRemoveDependencies(app, project, newModel);
+
+
+        new WriteAction<Void>() {
+          @Override
+          protected void run(@NotNull Result<Void> result) throws Throwable {
+
+            ModuleDependenciesUpdater.updateModuleDependencies(project, newModel);
+
+          }
+        }.execute();
+
+        saveProjectAsync(app, project);
       }
     });
   }
 
-  private static void doRemoveDependencies(@NotNull final Application app,
-                                           @NotNull final Project project,
-                                           @NotNull final ModulesDependencies newModel) {
-    ProgressManager.getInstance().run(new Task.Modal(project, "Removing Dependencies", false) {
-      public void run(@NotNull final ProgressIndicator indicator) {
-        ModuleDependenciesUpdater.updateModuleDependencies(project, newModel, indicator);
-
-        app.invokeLater(new Runnable() {
+  private static void saveProjectAsync(@NotNull final Application app,
+                                       @NotNull final Project project) {
+    app.invokeLater(new Runnable() {
+      public void run() {
+        app.runWriteAction(new Runnable() {
           public void run() {
-            app.runWriteAction(new Runnable() {
-              public void run() {
-                project.save();
-              }
-            });
+            project.save();
           }
         });
       }
     });
   }
+
 }

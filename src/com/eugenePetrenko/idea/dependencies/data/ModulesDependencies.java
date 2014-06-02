@@ -14,34 +14,26 @@
  * limitations under the License.
  */
 
-package com.eugenePetrenko.idea.dependencies;
+package com.eugenePetrenko.idea.dependencies.data;
 
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.util.text.StringUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
 
 /**
  * Created by Eugene Petrenko (eugene.petrenko@gmail.com)
  * Date: 07.04.13 20:33
  */
 public class ModulesDependencies {
-  private final Map<String, LibOrModuleSet> myModuleToRemove = new TreeMap<String, LibOrModuleSet>();
+  private final Map<Module, LibOrModuleSet> myModuleToRemove = new HashMap<Module, LibOrModuleSet>();
 
-  public void addRemoves(@NotNull final Module module, @Nullable final LibOrModuleSet set) {
-    myModuleToRemove.put(module.getName(), set);
-  }
+  public void addAll(@NotNull final Module fromModule,
+                     @NotNull final LibOrModuleSet dependencies) {
+    if (dependencies.isEmpty()) return;
 
-  public void addAllRemoves(@NotNull final Module fromModule, @NotNull LibOrModuleSet dependencies) {
-    addAllRemoves(fromModule.getName(), dependencies);
-  }
-
-  private void addAllRemoves(@NotNull final String fromModule, @NotNull LibOrModuleSet dependencies) {
     final LibOrModuleSet d = myModuleToRemove.get(fromModule);
     if (d == null) {
       myModuleToRemove.put(fromModule, dependencies);
@@ -50,19 +42,15 @@ public class ModulesDependencies {
     }
   }
 
-  public void addAllRemoves(@NotNull ModulesDependencies model) {
-    for (Map.Entry<String, LibOrModuleSet> e : model.myModuleToRemove.entrySet()) {
-      addAllRemoves(e.getKey(), e.getValue());
-    }
+  @NotNull
+  public Collection<Module> modules() {
+    return myModuleToRemove.keySet();
   }
 
-  @NotNull
-  public LibOrModuleSet forModule(@NotNull Module module) {
-    LibOrModuleSet set = myModuleToRemove.get(module.getName());
-    if (set == null) {
-      set = new LibOrModuleSet();
-      myModuleToRemove.put(module.getName(), set);
-    }
+  @Nullable
+  public LibOrModuleSet forModule(@NotNull final Module module) {
+    final LibOrModuleSet set = myModuleToRemove.get(module);
+    assert set == null || !set.isEmpty();
     return set;
   }
 
@@ -78,7 +66,7 @@ public class ModulesDependencies {
   public String toString() {
     final StringBuilder sb = new StringBuilder();
     sb.append("RemoveModulesModel{\n");
-    for (Map.Entry<String, LibOrModuleSet> e : myModuleToRemove.entrySet()) {
+    for (Map.Entry<Module, LibOrModuleSet> e : myModuleToRemove.entrySet()) {
       if (e.getValue().isEmpty()) continue;
 
       sb.append("  ").append(e.getKey()).append(" =>\n");
@@ -98,11 +86,11 @@ public class ModulesDependencies {
 
     final ModulesDependencies that = (ModulesDependencies) o;
 
-    final Set<String> allKeys = new HashSet<String>();
+    final Set<Module> allKeys = new HashSet<Module>();
     allKeys.addAll(this.myModuleToRemove.keySet());
     allKeys.addAll(that.myModuleToRemove.keySet());
 
-    for (String key : allKeys) {
+    for (Module key : allKeys) {
       final LibOrModuleSet thisSet = this.myModuleToRemove.get(key);
       final LibOrModuleSet thatSet = that.myModuleToRemove.get(key);
 

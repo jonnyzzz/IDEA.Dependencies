@@ -17,7 +17,7 @@
 package com.eugenePetrenko.idea.dependencies.actions;
 
 import com.eugenePetrenko.idea.dependencies.ModuleDependenciesAnalyzer;
-import com.eugenePetrenko.idea.dependencies.ModulesDependencies;
+import com.eugenePetrenko.idea.dependencies.data.ModulesDependencies;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.progress.ProgressIndicator;

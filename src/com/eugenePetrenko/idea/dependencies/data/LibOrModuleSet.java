@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.eugenePetrenko.idea.dependencies;
+package com.eugenePetrenko.idea.dependencies.data;
 
+import com.eugenePetrenko.idea.dependencies.DependenciesFilter;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.roots.LibraryOrderEntry;
 import com.intellij.openapi.roots.ModuleOrderEntry;
@@ -26,8 +27,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Set;
-import java.util.TreeSet;
 
 /**
 * Created 07.04.13 15:54
@@ -35,71 +36,56 @@ import java.util.TreeSet;
 * @author Eugene Petrenko (eugene.petrenko@jetbrains.com)
 */
 public class LibOrModuleSet {
-  private final Set<String> myModules = new TreeSet<String>();
-  private final Set<String> myLibs = new TreeSet<String>();
+  private final Set<Module> myModules = new HashSet<Module>();
+  private final Set<Library> myLibs = new HashSet<Library>();
 
-  public boolean contains(@Nullable Module mod) {
-    return mod != null && myModules.contains(mod.getName());
+  public boolean contains(@Nullable final Module mod) {
+    return mod != null && myModules.contains(mod);
   }
 
-  public boolean contains(@Nullable Library lib) {
-    if (lib == null) return false;
-    final String name = lib.getName();
-    return name != null && myLibs.contains(name);
+  public boolean contains(@Nullable final Library lib) {
+    return lib != null && myLibs.contains(lib);
   }
 
-  public boolean contains(@Nullable OrderEntry e) {
+  public boolean contains(@Nullable final OrderEntry e) {
     if (e == null) return false;
     return e.accept(CONTAINS, false);
   }
 
-  public void addDependencies(@NotNull Collection<? extends OrderEntry> es) {
+  public void addDependencies(@NotNull final Collection<? extends OrderEntry> es) {
     for (OrderEntry e : es) {
       addDependency(e);
     }
   }
 
-  public void addDependencies(@NotNull LibOrModuleSet deps) {
+  public void addDependencies(@NotNull final LibOrModuleSet deps) {
     myLibs.addAll(deps.myLibs);
     myModules.addAll(deps.myModules);
   }
 
-  public void addDependency(@NotNull OrderEntry e) {
+  public void addDependency(@NotNull final OrderEntry e) {
     if (!DependenciesFilter.REMOVABLE_DEPENDENCY.apply(e)) return;
     e.accept(ADD, null);
   }
 
   public void addDependency(@Nullable final Library lib) {
     if (lib == null) return;
-    final String name = lib.getName();
-    if (name == null) return;
-    myLibs.add(name);
+    myLibs.add(lib);
   }
 
-  public boolean removeDependency(@Nullable final Library lib) {
-    if (lib == null) return true;
-    String name = lib.getName();
-    if (name == null) return true;
-    myLibs.remove(name);
-    return false;
+  public void removeDependency(@Nullable final Library lib) {
+    if (lib == null) return;
+    myLibs.remove(lib);
   }
 
-  public boolean addDependency(@Nullable Module module) {
-    if (module == null) return true;
-    final String name = module.getName();
-    myModules.add(name);
-    return false;
+  public void addDependency(@Nullable final Module module) {
+    if (module == null) return;
+    myModules.add(module);
   }
 
-  public boolean removeDependency(@Nullable Module module) {
-    if (module == null) return true;
-    final String name = module.getName();
-    myModules.remove(name);
-    return false;
-  }
-
-  public void removeDependency(@NotNull OrderEntry e) {
-    e.accept(REMOVE, null);
+  public void removeDependency(@Nullable final Module module) {
+    if (module == null) return;
+    myModules.remove(module);
   }
 
   public boolean isEmpty() {
@@ -113,14 +99,14 @@ public class LibOrModuleSet {
 
     if (!myModules.isEmpty()) {
       sb.append("  Modules:\n");
-      for (String m : myModules) {
+      for (Module m : myModules) {
         sb.append("    ").append(m).append("\n");
       }
     }
 
     if (!myLibs.isEmpty()) {
       sb.append("  Libraries:\n");
-      for (String m : myLibs) {
+      for (Library m : myLibs) {
         sb.append("    ").append(m).append("\n");
       }
     }
@@ -138,20 +124,6 @@ public class LibOrModuleSet {
     @Override
     public Void visitModuleOrderEntry(ModuleOrderEntry moduleOrderEntry, Void value) {
       addDependency(moduleOrderEntry.getModule());
-      return null;
-    }
-  };
-
-  private final RootPolicy<Void> REMOVE = new RootPolicy<Void>(){
-    @Override
-    public Void visitLibraryOrderEntry(LibraryOrderEntry libraryOrderEntry, Void value) {
-      removeDependency(libraryOrderEntry.getLibrary());
-      return null;
-    }
-
-    @Override
-    public Void visitModuleOrderEntry(ModuleOrderEntry moduleOrderEntry, Void value) {
-      removeDependency(moduleOrderEntry.getModule());
       return null;
     }
   };

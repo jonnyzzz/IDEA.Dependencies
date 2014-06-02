@@ -1,9 +1,9 @@
 package com.eugenePetrenko.idea.depedencies;
 
 import com.eugenePetrenko.idea.dependencies.AnalyzeStrategy;
-import com.eugenePetrenko.idea.dependencies.LibOrModuleSet;
+import com.eugenePetrenko.idea.dependencies.data.LibOrModuleSet;
 import com.eugenePetrenko.idea.dependencies.ModuleDependenciesAnalyzer;
-import com.eugenePetrenko.idea.dependencies.ModulesDependencies;
+import com.eugenePetrenko.idea.dependencies.data.ModulesDependencies;
 import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.application.Result;
 import com.intellij.openapi.application.WriteAction;
@@ -188,19 +188,18 @@ public abstract class AnalyzerTestCase extends TestCase {
 
       @NotNull
       public ResultChecker removes(@NotNull ModuleBuilder from, @NotNull ModuleBuilder to) {
-        getOrCreate(from).addDependency(to.module());
+        LibOrModuleSet set = new LibOrModuleSet();
+        set.addDependency(to.module());
+        myExpected.addAll(from.module(), set);
         return this;
       }
 
       @NotNull
       public ResultChecker removes(@NotNull ModuleBuilder from, @NotNull Library to) {
-        getOrCreate(from).addDependency(to);
+        LibOrModuleSet set = new LibOrModuleSet();
+        set.addDependency(to);
+        myExpected.addAll(from.module(), set);
         return this;
-      }
-
-      @NotNull
-      private LibOrModuleSet getOrCreate(@NotNull final ModuleBuilder from) {
-        return myExpected.forModule(from.module());
       }
 
       public void assertActual(@NotNull ModulesDependencies actual) {

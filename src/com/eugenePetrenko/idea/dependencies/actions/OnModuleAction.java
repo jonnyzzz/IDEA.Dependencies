@@ -17,7 +17,7 @@
 package com.eugenePetrenko.idea.dependencies.actions;
 
 import com.eugenePetrenko.idea.dependencies.AnalyzeStrategy;
-import com.eugenePetrenko.idea.dependencies.ModulesDependencies;
+import com.eugenePetrenko.idea.dependencies.data.ModulesDependencies;
 import com.eugenePetrenko.idea.dependencies.ui.Comparators;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -94,7 +94,7 @@ public class OnModuleAction extends AnAction {
                     "It's required to include more modules to the list " +
                     "in order to analyze exported dependencies.\n\n" +
                     "Do you like to include more modules?",
-            "Jonnyzzz Dependencies",
+            "Unused Dependencies",
             "Include Modules",
             "Skip Exports",
             "Cancel",

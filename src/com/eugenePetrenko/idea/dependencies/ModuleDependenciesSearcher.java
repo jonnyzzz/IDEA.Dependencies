@@ -16,6 +16,8 @@
 
 package com.eugenePetrenko.idea.dependencies;
 
+import com.eugenePetrenko.idea.dependencies.data.LibOrModuleSet;
+import com.eugenePetrenko.idea.dependencies.data.ModulesDependencies;
 import com.intellij.codeInsight.daemon.ProblemHighlightFilter;
 import com.intellij.concurrency.JobLauncher;
 import com.intellij.ide.util.DelegatingProgressIndicator;
@@ -199,7 +201,7 @@ public class ModuleDependenciesSearcher {
             super.setFraction(outerFraction + fraction * outerStep);
           }
         };
-        result.addAllRemoves(module, collectionActualModuleDependencies(subProgress, project, module));
+        result.addAll(module, collectionActualModuleDependencies(subProgress, project, module));
       }
       return result;
     }

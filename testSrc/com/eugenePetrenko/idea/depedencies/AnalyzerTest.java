@@ -1,6 +1,6 @@
 package com.eugenePetrenko.idea.depedencies;
 
-import com.eugenePetrenko.idea.dependencies.ModulesDependencies;
+import com.eugenePetrenko.idea.dependencies.data.ModulesDependencies;
 import com.intellij.openapi.roots.libraries.Library;
 
 import static com.eugenePetrenko.idea.dependencies.AnalyzeStrategies.SKIP_EXPORT_DEPENDENCIES;
