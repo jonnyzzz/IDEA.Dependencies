@@ -1,7 +1,4 @@
-out
-*.tmp
 .idea/workspace.xml
 .idea/dictionaries/**
-build/.m2
-lib.fetched
-
+.gradle
+build/
