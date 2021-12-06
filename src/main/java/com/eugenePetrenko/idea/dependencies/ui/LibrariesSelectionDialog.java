@@ -40,6 +40,7 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.util.ArrayList;
@@ -173,7 +174,7 @@ public class LibrariesSelectionDialog extends DialogWrapper {
 
     private RootNode(@NotNull final Project project, @NotNull final ModulesDependencies model) {
       myModel = model;
-      final Vector<ModuleNode> children = new Vector<ModuleNode>();
+      final Vector<TreeNode> children = new Vector<>();
       final Module[] modules = ModuleManager.getInstance(project).getSortedModules();
       Arrays.sort(modules, Comparators.MODULE_COMPARATOR);
       for (Module module : modules) {
@@ -225,7 +226,7 @@ public class LibrariesSelectionDialog extends DialogWrapper {
           }
         }
       }, null);
-      children = new Vector<DependencyNodeBase>(myChildren);
+      children = new Vector(myChildren);
     }
 
     @NotNull

@@ -23,6 +23,7 @@
   <depends>com.intellij.modules.lang</depends>
   -->
   <depends>com.intellij.modules.lang</depends>
+  <depends>com.intellij.java</depends>
 
   <application-components>
     <!-- Add your application components here -->
