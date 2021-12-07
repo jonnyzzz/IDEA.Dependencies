@@ -1,4 +1,4 @@
-<idea-plugin version="2">
+<idea-plugin>
   <id>com.eugenePetrenko.idea.dependencies</id>
   <name>Jonnyzzz Dependencies</name>
   <version>1.0.10</version>
@@ -28,7 +28,6 @@
   <application-components>
     <!-- Add your application components here -->
   </application-components>
-
   <project-components>
     <!-- Add your project components here -->
   </project-components>

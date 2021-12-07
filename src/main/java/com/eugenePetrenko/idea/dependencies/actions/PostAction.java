@@ -24,7 +24,6 @@ import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.Result;
 import com.intellij.openapi.application.WriteAction;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
@@ -42,7 +41,7 @@ public class PostAction {
         public void run() {
           Notifications.Bus.notify(new Notification(
                   "Unused Dependencies",
-                  "Remove Unused Dependencies",
+                  "Remove unused dependencies",
                   "No unused dependencies were detected",
                   NotificationType.INFORMATION,
                   null
@@ -52,42 +51,24 @@ public class PostAction {
       return;
     }
 
-    app.invokeLater(new Runnable() {
-      public void run() {
-        LibrariesSelectionDialog dialog = new LibrariesSelectionDialog(project, model);
-        dialog.show();
-        if (!dialog.isOK()) return;
+    app.invokeLater(() -> {
+      LibrariesSelectionDialog dialog = new LibrariesSelectionDialog(project, model);
+      dialog.show();
+      if (!dialog.isOK()) return;
 
-        final ModulesDependencies newModel = dialog.getModel();
-        if (newModel.isEmpty()) return;
-
+      final ModulesDependencies newModel = dialog.getModel();
+      if (newModel.isEmpty()) return;
 
 
-        new WriteAction<Void>() {
-          @Override
-          protected void run(@NotNull Result<Void> result) throws Throwable {
+      WriteAction.run(() -> {
+        ModuleDependenciesUpdater.updateModuleDependencies(project, newModel);
+      });
 
-            ModuleDependenciesUpdater.updateModuleDependencies(project, newModel);
-
-          }
-        }.execute();
-
-        saveProjectAsync(app, project);
-      }
+      saveProjectAsync(app, project);
     });
   }
 
-  private static void saveProjectAsync(@NotNull final Application app,
-                                       @NotNull final Project project) {
-    app.invokeLater(new Runnable() {
-      public void run() {
-        app.runWriteAction(new Runnable() {
-          public void run() {
-            project.save();
-          }
-        });
-      }
-    });
+  private static void saveProjectAsync(@NotNull final Application app, @NotNull final Project project) {
+    app.invokeLater(() -> app.runWriteAction(project::save));
   }
-
 }

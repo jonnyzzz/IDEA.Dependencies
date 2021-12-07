@@ -39,12 +39,10 @@ public class ModuleDependenciesHelper {
   @NotNull
   public static Module[] includeExportDependencies(@NotNull final Project project,
                                                    @NotNull final Module[] modules) {
-    return ApplicationManager.getApplication().runReadAction(new Computable<Module[]>() {
-      public Module[] compute() {
-        Set<Module> set = new HashSet<Module>();
-        includeExportDependencies(project, Arrays.asList(modules), set);
-        return set.toArray(new Module[set.size()]);
-      }
+    return ApplicationManager.getApplication().runReadAction((Computable<Module[]>) () -> {
+      Set<Module> set = new HashSet<>();
+      includeExportDependencies(project, Arrays.asList(modules), set);
+      return set.toArray(new Module[0]);
     });
   }
 
@@ -67,25 +65,23 @@ public class ModuleDependenciesHelper {
   public static void updateExportedDependenciesUsages(@NotNull final Project project,
                                                       @NotNull final Module[] modules,
                                                       @NotNull final ModulesDependencies deps) {
-    ApplicationManager.getApplication().runReadAction(new Runnable() {
-      public void run() {
-        final ModuleManager moduleManager = ModuleManager.getInstance(project);
+    ApplicationManager.getApplication().runReadAction(() -> {
+      final ModuleManager moduleManager = ModuleManager.getInstance(project);
 
-        for (Module module : modules) {
-          final LibOrModuleSet exports = collectModuleExports(module);
-          if (exports.isEmpty()) continue;
+      for (Module module : modules) {
+        final LibOrModuleSet exports = collectModuleExports(module);
+        if (exports.isEmpty()) continue;
 
-          //take modules that depends on the module that has export dependency
-          final LibOrModuleSet moduleDeps = new LibOrModuleSet();
-          for (Module dependee : moduleManager.getModuleDependentModules(module)) {
-            final LibOrModuleSet libOrModuleDep = deps.forModule(dependee);
-            if (libOrModuleDep == null) continue;
+        //take modules that depends on the module that has export dependency
+        final LibOrModuleSet moduleDeps = new LibOrModuleSet();
+        for (Module dependee : moduleManager.getModuleDependentModules(module)) {
+          final LibOrModuleSet libOrModuleDep = deps.forModule(dependee);
+          if (libOrModuleDep == null) continue;
 
-            moduleDeps.addDependencies(libOrModuleDep.intersect(exports));
-          }
-
-          deps.addAll(module, moduleDeps);
+          moduleDeps.addDependencies(libOrModuleDep.intersect(exports));
         }
+
+        deps.addAll(module, moduleDeps);
       }
     });
   }
@@ -105,16 +101,16 @@ public class ModuleDependenciesHelper {
 
   @NotNull
   private static RootPolicy<Void> createExportDependencyCollector(@NotNull final LibOrModuleSet exports) {
-    return new RootPolicy<Void>(){
+    return new RootPolicy<>() {
       @Override
-      public Void visitModuleOrderEntry(ModuleOrderEntry moduleOrderEntry, Void value) {
+      public Void visitModuleOrderEntry(@NotNull ModuleOrderEntry moduleOrderEntry, Void value) {
         if (!moduleOrderEntry.isExported()) return null;
         exports.addDependency(moduleOrderEntry);
         return null;
       }
 
       @Override
-      public Void visitLibraryOrderEntry(LibraryOrderEntry libraryOrderEntry, Void value) {
+      public Void visitLibraryOrderEntry(@NotNull LibraryOrderEntry libraryOrderEntry, Void value) {
         if (!libraryOrderEntry.isExported()) return null;
         exports.addDependency(libraryOrderEntry);
         return null;

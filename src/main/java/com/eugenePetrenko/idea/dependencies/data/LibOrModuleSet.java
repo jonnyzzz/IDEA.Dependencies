@@ -36,8 +36,8 @@ import java.util.Set;
 * @author Eugene Petrenko (eugene.petrenko@jetbrains.com)
 */
 public class LibOrModuleSet {
-  private final Set<Module> myModules = new HashSet<Module>();
-  private final Set<Library> myLibs = new HashSet<Library>();
+  private final Set<Module> myModules = new HashSet<>();
+  private final Set<Library> myLibs = new HashSet<>();
 
   public boolean contains(@Nullable final Module mod) {
     return mod != null && myModules.contains(mod);
@@ -64,7 +64,7 @@ public class LibOrModuleSet {
   }
 
   public void addDependency(@NotNull final OrderEntry e) {
-    if (!DependenciesFilter.REMOVABLE_DEPENDENCY.apply(e)) return;
+    if (!DependenciesFilter.REMOVABLE_DEPENDENCY.test(e)) return;
     e.accept(ADD, null);
   }
 
@@ -114,7 +114,7 @@ public class LibOrModuleSet {
     return sb.toString();
   }
 
-  private final RootPolicy<Void> ADD = new RootPolicy<Void>(){
+  private final RootPolicy<Void> ADD = new RootPolicy<>() {
     @Override
     public Void visitLibraryOrderEntry(LibraryOrderEntry libraryOrderEntry, Void value) {
       addDependency(libraryOrderEntry.getLibrary());
@@ -128,7 +128,7 @@ public class LibOrModuleSet {
     }
   };
 
-  private final RootPolicy<Boolean> CONTAINS = new RootPolicy<Boolean>(){
+  private final RootPolicy<Boolean> CONTAINS = new RootPolicy<>() {
     @Override
     public Boolean visitLibraryOrderEntry(LibraryOrderEntry libraryOrderEntry, Boolean value) {
       return contains(libraryOrderEntry.getLibrary());

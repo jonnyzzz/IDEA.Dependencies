@@ -23,13 +23,13 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.LangDataKeys;
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.progress.PerformInBackgroundOption;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.openapi.vcs.changes.BackgroundFromStartOption;
 import com.intellij.util.Function;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -47,10 +47,9 @@ import static com.eugenePetrenko.idea.dependencies.ModuleDependenciesAnalyzer.pr
  */
 public class OnModuleAction extends AnAction {
   @Override
-  public void update(AnActionEvent e) {
+  public void update(@NotNull AnActionEvent e) {
     super.update(e);
 
-    if (e == null) return;
     final Module[] modules = e.getData(LangDataKeys.MODULE_CONTEXT_ARRAY);
     e.getPresentation().setEnabled(null != modules && modules.length > 0 && e.getProject() != null);
   }
@@ -74,7 +73,8 @@ public class OnModuleAction extends AnAction {
                     e.getProject(),
                     "Dependencies of [" + StringUtil.join(modules, TO_STRING, ", ") + "]",
                     true,
-                    BackgroundFromStartOption.getInstance()) {
+                    PerformInBackgroundOption.ALWAYS_BACKGROUND
+            ) {
 
               public void run(@NotNull final ProgressIndicator indicator) {
                 final ModulesDependencies toRemove = processModulesDependencies(strategy, indicator, modules, myProject);
@@ -109,9 +109,5 @@ public class OnModuleAction extends AnAction {
     }
   }
 
-  private static final Function<Module, String> TO_STRING = new Function<Module, String>() {
-    public String fun(Module module) {
-      return module.getName();
-    }
-  };
+  private static final Function<Module, String> TO_STRING = Module::getName;
 }

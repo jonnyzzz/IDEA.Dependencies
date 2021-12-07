@@ -1,11 +1,10 @@
 package com.eugenePetrenko.idea.depedencies;
 
 import com.eugenePetrenko.idea.dependencies.AnalyzeStrategy;
-import com.eugenePetrenko.idea.dependencies.data.LibOrModuleSet;
 import com.eugenePetrenko.idea.dependencies.ModuleDependenciesAnalyzer;
+import com.eugenePetrenko.idea.dependencies.data.LibOrModuleSet;
 import com.eugenePetrenko.idea.dependencies.data.ModulesDependencies;
 import com.intellij.openapi.application.PathManager;
-import com.intellij.openapi.application.Result;
 import com.intellij.openapi.application.WriteAction;
 import com.intellij.openapi.module.ModifiableModuleModel;
 import com.intellij.openapi.module.Module;
@@ -24,14 +23,13 @@ import org.junit.Assert;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 
 /**
  * Created by Eugene Petrenko (eugene.petrenko@gmail.com)
  * Date: 10.04.13 9:51
  */
 public abstract class AnalyzerTestCase extends TestCase {
-  private final Lazy<File, IOException> myTestDataPath = new Lazy<File, IOException>() {
+  private final Lazy<File, IOException> myTestDataPath = new Lazy<>() {
     @NotNull
     @Override
     protected File compute() throws IOException {
@@ -77,26 +75,23 @@ public abstract class AnalyzerTestCase extends TestCase {
                          @NotNull final String name,
                          @NotNull final String[] path) throws Exception {
       myHost = host;
-      final
-      JavaModuleFixtureBuilder bld = host.addModule(JavaModuleFixtureBuilder.class);
+      final JavaModuleFixtureBuilder bld = host.addModule(JavaModuleFixtureBuilder.class);
       bld.setMockJdkLevel(JavaModuleFixtureBuilder.MockJdkLevel.jdk15);
       bld.addSourceContentRoot(testDataPath(path));
       myModule = bld.getFixture();
       myModule.setUp();
-      new WriteAction<Void>() {
-        @Override
-        protected void run(Result<Void> result) throws Throwable {
-          final ModifiableModuleModel model = ModuleManager.getInstance(project()).getModifiableModel();
-          try {
-            model.renameModule(module(), name);
-          } catch (ModuleWithNameAlreadyExists moduleWithNameAlreadyExists) {
-            model.dispose();
-            Assert.fail();
-            return;
-          }
-          model.commit();
+
+      WriteAction.run(() -> {
+        final ModifiableModuleModel model = ModuleManager.getInstance(project()).getModifiableModel();
+        try {
+          model.renameModule(module(), name);
+        } catch (ModuleWithNameAlreadyExists moduleWithNameAlreadyExists) {
+          model.dispose();
+          Assert.fail();
+          return;
         }
-      }.execute();
+        model.commit();
+      });
     }
 
     @NotNull
@@ -109,16 +104,13 @@ public abstract class AnalyzerTestCase extends TestCase {
       return myModule.getModule();
     }
 
-    public void lib(@NotNull final Library... libs) throws MalformedURLException {
+    public void lib(@NotNull final Library... libs) {
       for (final Library lib : libs) {
-        new WriteAction() {
-          @Override
-          protected void run(Result result) throws Throwable {
-            final ModifiableRootModel mod = ModuleRootManager.getInstance(module()).getModifiableModel();
-            mod.addLibraryEntry(lib).setScope(DependencyScope.COMPILE);
-            mod.commit();
-          }
-        }.execute();
+        WriteAction.run(() -> {
+          final ModifiableRootModel mod = ModuleRootManager.getInstance(module()).getModifiableModel();
+          mod.addLibraryEntry(lib).setScope(DependencyScope.COMPILE);
+          mod.commit();
+        });
       }
     }
   }
@@ -158,28 +150,22 @@ public abstract class AnalyzerTestCase extends TestCase {
     }
 
     @NotNull
-    public Library lib(@NotNull final String name, @NotNull String... path) throws MalformedURLException {
-      final String url = "file://" + testDataPath(path).replace("\\","/") + "/";
-      return new WriteAction<Library>() {
-        @Override
-        protected void run(Result<Library> result) throws Throwable {
-          final Library lib = LibraryTablesRegistrar.getInstance().getLibraryTable(project()).createLibrary(name);
-          final Library.ModifiableModel model = lib.getModifiableModel();
-          model.addRoot(url, OrderRootType.CLASSES);
-          model.commit();
-          result.setResult(lib);
-        }
-      }.execute().getResultObject();
+    public Library lib(@NotNull final String name, @NotNull String... path) {
+      final String url = "file://" + testDataPath(path).replace("\\", "/") + "/";
+      return WriteAction.compute(() -> {
+        final Library lib = LibraryTablesRegistrar.getInstance().getLibraryTable(project()).createLibrary(name);
+        final Library.ModifiableModel model = lib.getModifiableModel();
+        model.addRoot(url, OrderRootType.CLASSES);
+        model.commit();
+
+        return lib;
+      });
     }
 
     public final void doTheTest() throws Throwable {
       final JavaCodeInsightTestFixture java = JavaTestFixtureFactory.getFixtureFactory().createCodeInsightFixture(myHost.getFixture());
       java.setUp();
-      try {
-        testCode();
-      } finally {
-//        java.tearDown();
-      }
+      testCode();
     }
 
 

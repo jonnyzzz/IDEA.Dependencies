@@ -34,7 +34,6 @@ import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.ui.UIUtil;
 import com.intellij.util.ui.tree.TreeUtil;
-import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -56,8 +55,8 @@ import static com.intellij.ui.SimpleTextAttributes.*;
  * @author Eugene Petrenko (eugene.petrenko@jetbrains.com)
  */
 public class LibrariesSelectionDialog extends DialogWrapper {
-  private static final DataKey<DependencyNodeBase> DEPENDENCY_NODE = DataKey.create("jdependency_node");
-  private static final DataKey<Collection<DependencyNodeBase>> DEPENDENCY_NODE_ARRAY = DataKey.create("jdependency_nodes");
+  private static final DataKey<DependencyNodeBase<?>> DEPENDENCY_NODE = DataKey.create("jdependency_node");
+  private static final DataKey<Collection<DependencyNodeBase<?>>> DEPENDENCY_NODE_ARRAY = DataKey.create("jdependency_nodes");
 
   @NotNull
   private final ModulesDependencies myModel;
@@ -93,48 +92,46 @@ public class LibrariesSelectionDialog extends DialogWrapper {
     pn.add(new JBScrollPane(myTree), BorderLayout.CENTER);
     pn.add(new Label("Use Insert or Delete key to include/exclude or SPACE to toggle dependencies from remove"), BorderLayout.SOUTH);
 
-    DataManager.registerDataProvider(pn, new DataProvider() {
-      public Object getData(@NonNls String dataId) {
-        final TreePath path = myTree.getSelectionPath();
-        if (path != null) {
-          Object component = path.getLastPathComponent();
-          if (component instanceof ModuleHoldingNode && LangDataKeys.MODULE.is(dataId)) {
-            return ((ModuleHoldingNode) component).getModule();
-          }
-          if (component instanceof LibraryHoldingNode && LangDataKeys.LIBRARY.is(dataId)) {
-            return ((LibraryHoldingNode) component).getLibrary();
-          }
-
-          if (component instanceof DependencyNodeBase && DEPENDENCY_NODE.is(dataId)) {
-            return component;
-          }
+    DataManager.registerDataProvider(pn, dataId -> {
+      final TreePath path = myTree.getSelectionPath();
+      if (path != null) {
+        Object component = path.getLastPathComponent();
+        if (component instanceof ModuleHoldingNode && LangDataKeys.MODULE.is(dataId)) {
+          return ((ModuleHoldingNode) component).getModule();
+        }
+        if (component instanceof LibraryHoldingNode && LangDataKeys.LIBRARY.is(dataId)) {
+          return ((LibraryHoldingNode) component).getLibrary();
         }
 
-        if (DEPENDENCY_NODE_ARRAY.is(dataId)) {
-          Collection<DependencyNodeBase> result = new ArrayList<DependencyNodeBase>();
-          for (TreePath treePath : myTree.getSelectionModel().getSelectionPaths()) {
-            Object obj = treePath.getLastPathComponent();
-            if (obj instanceof DependencyNodeBase) {
-              result.add((DependencyNodeBase) obj);
-            }
-            if (obj instanceof ModuleNode) {
-              result.addAll(((ModuleNode) obj).getChildren());
-            }
-          }
-          if (!result.isEmpty()) return result;
+        if (component instanceof DependencyNodeBase && DEPENDENCY_NODE.is(dataId)) {
+          return component;
         }
-
-        return null;
       }
+
+      if (DEPENDENCY_NODE_ARRAY.is(dataId)) {
+        Collection<DependencyNodeBase<?>> result = new ArrayList<>();
+        for (TreePath treePath : myTree.getSelectionModel().getSelectionPaths()) {
+          Object obj = treePath.getLastPathComponent();
+          if (obj instanceof DependencyNodeBase) {
+            result.add((DependencyNodeBase<?>) obj);
+          }
+          if (obj instanceof ModuleNode) {
+            result.addAll(((ModuleNode) obj).getChildren());
+          }
+        }
+        if (!result.isEmpty()) return result;
+      }
+
+      return null;
     });
 
     new AnAction("Exclude") {
       @Override
-      public void actionPerformed(AnActionEvent e) {
-        Collection<DependencyNodeBase> nodes = e.getData(DEPENDENCY_NODE_ARRAY);
+      public void actionPerformed(@NotNull AnActionEvent e) {
+        Collection<DependencyNodeBase<?>> nodes = e.getData(DEPENDENCY_NODE_ARRAY);
         if (nodes == null) return;
 
-        for (DependencyNodeBase node : nodes) {
+        for (DependencyNodeBase<?> node : nodes) {
           node.setRemoved(true);
         }
         myTree.updateUI();
@@ -142,11 +139,11 @@ public class LibrariesSelectionDialog extends DialogWrapper {
     }.registerCustomShortcutSet(CustomShortcutSet.fromString("DELETE"), pn);
     new AnAction("Include") {
       @Override
-      public void actionPerformed(AnActionEvent e) {
-        Collection<DependencyNodeBase> nodes = e.getData(DEPENDENCY_NODE_ARRAY);
+      public void actionPerformed(@NotNull AnActionEvent e) {
+        Collection<DependencyNodeBase<?>> nodes = e.getData(DEPENDENCY_NODE_ARRAY);
         if (nodes == null) return;
 
-        for (DependencyNodeBase node : nodes) {
+        for (DependencyNodeBase<?> node : nodes) {
           node.setRemoved(false);
         }
         myTree.updateUI();
@@ -154,11 +151,11 @@ public class LibrariesSelectionDialog extends DialogWrapper {
     }.registerCustomShortcutSet(CustomShortcutSet.fromString("INSERT"), pn);
     new AnAction("Toggle") {
       @Override
-      public void actionPerformed(AnActionEvent e) {
-        Collection<DependencyNodeBase> nodes = e.getData(DEPENDENCY_NODE_ARRAY);
+      public void actionPerformed(@NotNull AnActionEvent e) {
+        Collection<DependencyNodeBase<?>> nodes = e.getData(DEPENDENCY_NODE_ARRAY);
         if (nodes == null) return;
 
-        for (DependencyNodeBase node : nodes) {
+        for (DependencyNodeBase<?> node : nodes) {
           node.toggle();
         }
         myTree.updateUI();
@@ -168,17 +165,14 @@ public class LibrariesSelectionDialog extends DialogWrapper {
     return pn;
   }
 
-  private class RootNode extends DefaultMutableTreeNode {
-    @NotNull
-    private final ModulesDependencies myModel;
+  private static class RootNode extends DefaultMutableTreeNode {
 
     private RootNode(@NotNull final Project project, @NotNull final ModulesDependencies model) {
-      myModel = model;
       final Vector<TreeNode> children = new Vector<>();
       final Module[] modules = ModuleManager.getInstance(project).getSortedModules();
       Arrays.sort(modules, Comparators.MODULE_COMPARATOR);
       for (Module module : modules) {
-        final LibOrModuleSet filter = myModel.forModule(module);
+        final LibOrModuleSet filter = model.forModule(module);
         if (filter == null) continue;
         children.add(new ModuleNode(module, filter));
       }
@@ -196,9 +190,9 @@ public class LibrariesSelectionDialog extends DialogWrapper {
     Library getLibrary();
   }
 
-  private class ModuleNode extends DefaultMutableTreeNode implements ModuleHoldingNode {
+  private static class ModuleNode extends DefaultMutableTreeNode implements ModuleHoldingNode {
     private final Module myModule;
-    private final Collection<DependencyNodeBase> myChildren = new ArrayList<DependencyNodeBase>();
+    private final Collection<DependencyNodeBase<? extends ExportableOrderEntry>> myChildren = new ArrayList<>();
 
     private ModuleNode(@NotNull Module module, @NotNull final LibOrModuleSet libOrModuleSet) {
       myModule = module;
@@ -220,17 +214,17 @@ public class LibrariesSelectionDialog extends DialogWrapper {
           return null;
         }
 
-        private void addNode(@NotNull DependencyNodeBase e) {
+        private void addNode(@NotNull DependencyNodeBase<?> e) {
           if (e.intersects()) {
             myChildren.add(e);
           }
         }
       }, null);
-      children = new Vector(myChildren);
+      children = new Vector<>(myChildren);
     }
 
     @NotNull
-    public Collection<DependencyNodeBase> getChildren() {
+    public Collection<DependencyNodeBase<?>> getChildren() {
       return myChildren;
     }
 
@@ -249,7 +243,8 @@ public class LibrariesSelectionDialog extends DialogWrapper {
     boolean isRemoved();
   }
 
-  private abstract class DependencyNodeBase<T extends ExportableOrderEntry> extends DefaultMutableTreeNode implements RemovableNode, DependencyNode {
+  @SuppressWarnings("NonExtendableApiUsage")
+  private abstract static class DependencyNodeBase<T extends ExportableOrderEntry> extends DefaultMutableTreeNode implements RemovableNode, DependencyNode {
     protected final LibOrModuleSet myFilter;
     protected final T myEntry;
     private boolean myIsRemoved;
@@ -279,7 +274,7 @@ public class LibrariesSelectionDialog extends DialogWrapper {
     public abstract boolean intersects();
   }
 
-  private class DependencyModuleNode extends DependencyNodeBase<ModuleOrderEntry> implements ModuleHoldingNode {
+  private static class DependencyModuleNode extends DependencyNodeBase<ModuleOrderEntry> implements ModuleHoldingNode {
     @NotNull
     private final Module myModule;
 
@@ -309,7 +304,7 @@ public class LibrariesSelectionDialog extends DialogWrapper {
     }
   }
 
-  private class DependencyLibNode extends DependencyNodeBase<LibraryOrderEntry> implements LibraryHoldingNode {
+  private static class DependencyLibNode extends DependencyNodeBase<LibraryOrderEntry> implements LibraryHoldingNode {
     private final Library myLib;
 
     private DependencyLibNode(@NotNull LibOrModuleSet filter, @NotNull LibraryOrderEntry entry, @NotNull Library library) {
@@ -338,12 +333,12 @@ public class LibrariesSelectionDialog extends DialogWrapper {
     }
   }
 
-  private class CellRenderer extends ColoredTreeCellRenderer {
+  private static class CellRenderer extends ColoredTreeCellRenderer {
     @Override
-    public void customizeCellRenderer(JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
+    public void customizeCellRenderer(@NotNull JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
       @SimpleTextAttributes.StyleAttributeConstant int textType = STYLE_PLAIN;
       if (value instanceof DependencyNodeBase) {
-        final DependencyNodeBase node = (DependencyNodeBase) value;
+        final DependencyNodeBase<?> node = (DependencyNodeBase<?>) value;
         if (node.isRemoved()) {
           textType |= STYLE_STRIKEOUT;
         }

@@ -68,19 +68,17 @@ public class ModuleDependenciesSearcher {
     final ModuleFileIndex moduleIndex = roots.getFileIndex();
     final ProjectFileIndex projectIndex = ProjectRootManager.getInstance(project).getFileIndex();
 
-    final List<VirtualFile> allFiles = new ArrayList<VirtualFile>(1000);
-    moduleIndex.iterateContent(new ContentIterator() {
-      public boolean processFile(@NotNull final VirtualFile fileOrDir) {
-        indicator.checkCanceled();
+    final List<VirtualFile> allFiles = new ArrayList<>(1000);
+    moduleIndex.iterateContent(fileOrDir -> {
+      indicator.checkCanceled();
 
-        if (fileOrDir.isDirectory()) return true;
-        if (ProjectCoreUtil.isProjectOrWorkspaceFile(fileOrDir)) return true;
-        if (!moduleIndex.isInContent(fileOrDir)) return true;
-        if (moduleIndex.isInSourceContent(fileOrDir) || moduleIndex.isInTestSourceContent(fileOrDir)) {
-          allFiles.add(fileOrDir);
-        }
-        return true;
+      if (fileOrDir.isDirectory()) return true;
+      if (ProjectCoreUtil.isProjectOrWorkspaceFile(fileOrDir)) return true;
+      if (!moduleIndex.isInContent(fileOrDir)) return true;
+      if (moduleIndex.isInSourceContent(fileOrDir) || moduleIndex.isInTestSourceContent(fileOrDir)) {
+        allFiles.add(fileOrDir);
       }
+      return true;
     });
 
     final double total = allFiles.size();
@@ -89,13 +87,12 @@ public class ModuleDependenciesSearcher {
     JobLauncher.getInstance().invokeConcurrentlyUnderProgress(
             allFiles,
             indicator,
-            true,
-            new Processor<VirtualFile>() {
+            new Processor<>() {
               public boolean process(@NotNull final VirtualFile file) {
                 indicator.checkCanceled();
                 indicator.setFraction(current.incrementAndGet() / total);
 
-                final Set<OrderEntry> oes = new HashSet<OrderEntry>(10);
+                final Set<OrderEntry> oes = new HashSet<>(10);
                 ApplicationManager.getApplication().runReadAction(new Runnable() {
                   public void run() {
                     final PsiFile psiFile = psiManager.findFile(file);
@@ -109,7 +106,7 @@ public class ModuleDependenciesSearcher {
 
                     psiFile.accept(new PsiRecursiveElementVisitor() {
                       @Override
-                      public void visitElement(final PsiElement element) {
+                      public void visitElement(final @NotNull PsiElement element) {
                         super.visitElement(element);
 
                         for (final PsiReference ref : PsiReferenceService.getService().getReferences(element, NO_HINTS)) {
@@ -123,11 +120,9 @@ public class ModuleDependenciesSearcher {
                         if (!resolved.isValid()) return;
 
                         if (resolved instanceof PsiClass) {
-                          InheritanceUtil.processSupers((PsiClass) resolved, true, new Processor<PsiClass>() {
-                            public boolean process(@NotNull PsiClass psiClass) {
-                              registerUsage(psiClass);
-                              return true;
-                            }
+                          InheritanceUtil.processSupers((PsiClass) resolved, true, psiClass -> {
+                            registerUsage(psiClass);
+                            return true;
                           });
                           return;
                         }
@@ -177,7 +172,7 @@ public class ModuleDependenciesSearcher {
                                                                           @NotNull final Project project,
                                                                           @NotNull final Module[] modules) {
       final ModulesDependencies result = new ModulesDependencies();
-      final double length = (double) modules.length;
+      final double length = modules.length;
       final double outerStep = 1.0 / length;
 
       for (int i = 0; i < modules.length; i++) {

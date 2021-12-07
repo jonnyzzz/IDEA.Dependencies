@@ -28,7 +28,7 @@ import java.util.*;
  * Date: 07.04.13 20:33
  */
 public class ModulesDependencies {
-  private final Map<Module, LibOrModuleSet> myModuleToRemove = new HashMap<Module, LibOrModuleSet>();
+  private final Map<Module, LibOrModuleSet> myModuleToRemove = new HashMap<>();
 
   public void addAll(@NotNull final Module fromModule,
                      @NotNull final LibOrModuleSet dependencies) {
@@ -86,7 +86,7 @@ public class ModulesDependencies {
 
     final ModulesDependencies that = (ModulesDependencies) o;
 
-    final Set<Module> allKeys = new HashSet<Module>();
+    final Set<Module> allKeys = new HashSet<>();
     allKeys.addAll(this.myModuleToRemove.keySet());
     allKeys.addAll(that.myModuleToRemove.keySet());
 

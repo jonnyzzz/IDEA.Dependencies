@@ -44,18 +44,13 @@ public class ModuleDependenciesAnalyzer {
   public static ModulesDependencies processAllDependencies(@NotNull final AnalyzeStrategy strategy,
                                                            @NotNull final ProgressIndicator indicator,
                                                            @NotNull final Project project) {
-    final Module[] modules = ApplicationManager.getApplication().runReadAction(new Computable<Module[]>() {
-      public Module[] compute() {
-        return ModuleManager.getInstance(project).getSortedModules();
-      }
-    });
+    final Module[] modules = ApplicationManager.getApplication().runReadAction((Computable<Module[]>) () -> ModuleManager.getInstance(project).getSortedModules());
 
     return processModulesDependencies(strategy, indicator, modules, project);
   }
 
   /**
    * Performs references analysis for given module
-   *
    *
    * @param indicator progress
    * @param modules   modules
@@ -81,13 +76,11 @@ public class ModuleDependenciesAnalyzer {
     for (final Module module : allModules) {
       final LibOrModuleSet toRemove = new LibOrModuleSet();
       final LibOrModuleSet actualUsages = moduleUsages.forModule(module);
-      ApplicationManager.getApplication().runReadAction(new Runnable() {
-        public void run() {
-          for (OrderEntry e : ModuleRootManager.getInstance(module).getOrderEntries()) {
-            if (!strategy.isSupportedDependency(e)) continue;
-            if (actualUsages != null && actualUsages.contains(e)) continue;
-            toRemove.addDependency(e);
-          }
+      ApplicationManager.getApplication().runReadAction(() -> {
+        for (OrderEntry e : ModuleRootManager.getInstance(module).getOrderEntries()) {
+          if (!strategy.isSupportedDependency(e)) continue;
+          if (actualUsages != null && actualUsages.contains(e)) continue;
+          toRemove.addDependency(e);
         }
       });
       moduleRemovables.addAll(module, toRemove);

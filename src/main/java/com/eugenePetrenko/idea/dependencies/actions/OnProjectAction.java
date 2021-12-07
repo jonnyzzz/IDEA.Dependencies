@@ -20,11 +20,11 @@ import com.eugenePetrenko.idea.dependencies.ModuleDependenciesAnalyzer;
 import com.eugenePetrenko.idea.dependencies.data.ModulesDependencies;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.progress.PerformInBackgroundOption;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vcs.changes.BackgroundFromStartOption;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -37,10 +37,9 @@ import static com.intellij.openapi.actionSystem.PlatformDataKeys.PROJECT;
  */
 public class OnProjectAction extends AnAction {
   @Override
-  public void update(AnActionEvent e) {
+  public void update(@NotNull AnActionEvent e) {
     super.update(e);
 
-    if (e == null) return;
     e.getPresentation().setEnabled(null != e.getData(PROJECT));
   }
 
@@ -50,7 +49,7 @@ public class OnProjectAction extends AnAction {
     final Project project = anActionEvent.getData(PROJECT);
     if (project == null) return;
 
-    ProgressManager.getInstance().run(new Task.Backgroundable(project, "Dependencies of All Modules", true, BackgroundFromStartOption.getInstance()) {
+    ProgressManager.getInstance().run(new Task.Backgroundable(project, "Dependencies of all modules", true, PerformInBackgroundOption.ALWAYS_BACKGROUND) {
       public void run(@NotNull final ProgressIndicator indicator) {
         final ModulesDependencies result = ModuleDependenciesAnalyzer.processAllDependencies(WITH_EXPORT_DEPENDENCIES, indicator, project);
         PostAction.completeProcess(project, result);
