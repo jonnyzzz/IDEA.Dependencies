@@ -37,17 +37,12 @@ public class PostAction {
     final Application app = ApplicationManager.getApplication();
 
     if (model.isEmpty()) {
-      app.invokeLater(new Runnable() {
-        public void run() {
-          Notifications.Bus.notify(new Notification(
-                  "Unused Dependencies",
-                  "Remove unused dependencies",
-                  "No unused dependencies were detected",
-                  NotificationType.INFORMATION,
-                  null
-          ), project);
-        }
-      });
+      app.invokeLater(() -> Notifications.Bus.notify(new Notification(
+              "Unused Dependencies",
+              "Remove unused dependencies",
+              "No unused dependencies were detected",
+              NotificationType.INFORMATION
+      ), project));
       return;
     }
 

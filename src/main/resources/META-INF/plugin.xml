@@ -25,6 +25,10 @@
   <depends>com.intellij.modules.lang</depends>
   <depends>com.intellij.java</depends>
 
+  <extensions defaultExtensionNs="com.intellij">
+    <notificationGroup displayType="BALLOON" id="Unused Dependencies" />
+  </extensions>
+
   <application-components>
     <!-- Add your application components here -->
   </application-components>
@@ -40,7 +44,7 @@
       <action class="com.eugenePetrenko.idea.dependencies.actions.OnModuleAction" text="Analyze Selected Modules" id="jmodule"/>
     </group>
 
-    <group>
+    <group id="jonnyzzz.Remove">
       <add-to-group group-id="ProjectViewPopupMenuSettingsGroup" anchor="last"/>
       <action class="com.eugenePetrenko.idea.dependencies.actions.OnModuleAction" text="Remove Unused Dependencies" id="jmodule3"/>
     </group>
